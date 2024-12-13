@@ -1,52 +1,108 @@
-% Unicycle class
-classdef Unicycle
+% ┌─────────────────────────────────────────────────────────────────────────┐ 
+% │                             Unicycle Class                              │ 
+% └─────────────────────────────────────────────────────────────────────────┘ 
+% Class modelling unicycle non-linear dynamics
+%
+% Creation
+%   Syntax
+%     obj = Unicycle(r, L, Ts, x_constraints, u_constraints)
+%
+%   Input Arguments
+%     r - Wheel radius
+%         real scalar
+%     L - Distance between wheels
+%         real scalar
+%     Ts - Sampling time
+%         real scalar
+%     x_constraints - State constraints
+%         real matrix
+%     u_constraints - Input constraints
+%         real vector
+%
+% Properties
+%   n - Number of states
+%       real scalar
+%   m - Number of inputs
+%       real scalar
+%   p - Number of outputs
+%       real scalar
+%   Ts - Sampling time
+%       real scalar
+%   r - Wheel radius
+%       real scalar
+%   L - Distance between wheels
+%       real scalar
+%   min_omega - Minimum angular velocity
+%       real scalar
+%   max_omega - Maximum angular velocity
+%       real scalar
+%   min_x - Minimum x position
+%       real scalar
+%   max_x - Maximum x position
+%       real scalar
+%   min_y - Minimum y position
+%       real scalar
+%   max_y - Maximum y position
+%       real scalar
+%   min_theta - Minimum heading angle
+%       real scalar
+%   max_theta - Maximum heading angle
+%       real scalar
+%   eps_x - State constraints matrix
+%       real matrix
+%   f_x - State constraints vector
+%       real vector
+%   eps_u - Input constraints matrix
+%       real matrix
+%   f_u - Input constraints vector
+%       real vector
+%
+% Methods
+%   dynamics - State transition function: non-linear continuous dynamics
+%   simulate - Simulation function
+%   linearize - Linearization function
+%   fix_angles - Fix reference angles function
+%
+% Examples
+%   unicycle = Unicycle(0.1, 0.5, 0.1, [-2 2; -2 2; 0 2*pi], [-30, 30]);
+%   x = unicycle.simulate([0; 0; 7*pi/4], [0; 0], 0.1);
+
+classdef Unicycle < DynamicalSystem
     properties
-        r           % wheel radius
-        L           % distance between wheels
-        Ts          % sampling time
         n = 3;      % number of states
         m = 2;      % number of inputs
         p = 3;      % number of outputs
-        max_omega;  % maximum angular velocity
+        Ts          % sampling time
+        r           % wheel radius
+        L           % distance between wheels
         min_omega;  % minimum angular velocity
-        max_x;      % maximum x position
+        max_omega;  % maximum angular velocity
         min_x;      % minimum x position
-        max_y;      % maximum y position
+        max_x;      % maximum x position
         min_y;      % minimum y position
-        max_theta;  % maximum heading angle
+        max_y;      % maximum y position
         min_theta;  % minimum heading angle
-        eps_u;      % input constraints matrix
-        f_u;        % input constraints vector
+        max_theta;  % maximum heading angle
         eps_x;      % state constraints matrix
         f_x;        % state constraints vector
+        eps_u;      % input constraints matrix
+        f_u;        % input constraints vector
     end
     
     methods
         % Constructor to initialize the unicycle parameters and state
-        function obj = Unicycle(r, L, Ts, omega_limits, x_limits, y_limits, theta_limits)
+        function obj = Unicycle(r, L, Ts, x_constraints, u_constraints)
             obj.r = r;
             obj.L = L;
             obj.Ts = Ts;
-            obj.max_omega = omega_limits(2);
-            obj.min_omega = omega_limits(1);
-            obj.max_x = x_limits(2);
-            obj.min_x = x_limits(1);
-            obj.max_y = y_limits(2);
-            obj.min_y = y_limits(1);
-            obj.max_theta = theta_limits(2);
-            obj.min_theta = theta_limits(1);
-            obj.eps_u = [
-                 1  0;
-                -1  0;
-                 0  1;
-                 0 -1;
-            ];
-            obj.f_u = [
-                +obj.max_omega;
-                -obj.min_omega;
-                +obj.max_omega;
-                -obj.min_omega;
-            ];
+            obj.min_x = x_constraints(1, 1);
+            obj.max_x = x_constraints(1, 2);
+            obj.min_y = x_constraints(2, 1);
+            obj.max_y = x_constraints(2, 2);
+            obj.min_theta = x_constraints(3, 1);
+            obj.max_theta = x_constraints(3, 2);
+            obj.min_omega = u_constraints(1);
+            obj.max_omega = u_constraints(2);
             obj.eps_x = [
                  1,  0,  0;
                 -1,  0,  0;
@@ -63,12 +119,45 @@ classdef Unicycle
                 +obj.max_theta;
                 -obj.min_theta
             ];
+            obj.eps_u = [
+                 1  0;
+                -1  0;
+                 0  1;
+                 0 -1;
+            ];
+            obj.f_u = [
+                +obj.max_omega;
+                -obj.min_omega;
+                +obj.max_omega;
+                -obj.min_omega;
+            ];
+
         end
 
-        % Non-linear continuous dynamics / State transition function
+        % State transition function: non-linear continuous dynamics
         function dxdt = dynamics(obj, t, x, u)
-            % x_pos = x(1);                             % x-position
-            % y_pos = x(2);                             % y-position
+            % dynamics
+            %   State transition function for unicycle model:
+            %
+            %   dx_posdt = v * cos(theta)
+            %   dy_posdt = v * sin(theta)
+            %   dthetadt = omega
+            %
+            % Syntax
+            %   dxdt = obj.dynamics(t, x, u)
+            %
+            % Input Arguments
+            %   t - Time
+            %       real scalar
+            %   x - State vector
+            %       real vector
+            %   u - Input vector
+            %       real vector
+            %
+            % Output Arguments
+            %   dxdt - State transition vector
+            %       real vector
+
             theta = x(3);                               % orientation angle
             omega1 = u(1);                              % angular velocity of wheel 1
             omega2 = u(2);                              % angular velocity of wheel 2
@@ -80,16 +169,52 @@ classdef Unicycle
             dxdt = [dx_posdt; dy_posdt; dthetadt];
         end
 
-        % Simulation function using ode45
+        % Simulation function
         function x_final = simulate(obj, x0, u, T)
+            % simulate
+            %   Simulate the unicycle model for a given time period T
+            %
+            % Syntax
+            %   x_final = obj.simulate(x0, u, T)
+            %
+            % Input Arguments
+            %   x0 - Initial state
+            %       real vector
+            %   u - Input vector
+            %       real vector
+            %   T - Simulation time
+            %       real scalar
+            %
+            % Output Arguments
+            %   x_final - Final state
+            %       real vector
+
             x0(3) = wrapTo2Pi(x0(3));
             [t, x] = ode45(@(t, x) obj.dynamics(t, x, u), [0, T], x0);
             x_final = (x(end, :))';
             x_final(3) = wrapTo2Pi(x_final(3));
         end
         
-        % Linearization function using symbolic toolbox
+        % Linearization function
         function [A_lin, B_lin] = linearize(obj, x_bar, u_bar)
+            % linearize
+            %   Linearize the unicycle model around the operating point
+            %
+            % Syntax
+            %   [A_lin, B_lin] = obj.linearize(x_bar, u_bar)
+            %
+            % Input Arguments
+            %   x_bar - Operating point of the states
+            %       real vector
+            %   u_bar - Operating point of the inputs
+            %       real vector
+            %
+            % Output Arguments
+            %   A_lin - Linearized state matrix
+            %       real matrix
+            %   B_lin - Linearized input matrix
+            %       real matrix
+
             syms x_pos y_pos theta omega1 omega2 real
             syms r L
             x = [x_pos; y_pos; theta];
@@ -106,19 +231,33 @@ classdef Unicycle
             B_lin = double(subs(B, [x; u; r; L], [x_bar; u_bar; obj.r; obj.L]));
         end
 
-        % Discretization function (from linear system)
-        function [A_discrete, B_discrete] = discretize(obj, A, B)
+        % Fix reference angles function
+        function x_ref_fixed = fix_angles(obj, x, x_ref)
+            % fix_angles
+            %   Fix the reference angles w.r.t. the current state to avoid
+            %   discontinuities introduced by cuts such as [-pi, pi] or [0, 2*pi]
+            %   angles representations
+            %
+            % Syntax
+            %   x_ref_fixed = obj.fix_angles(x, x_ref)
+            %
+            % Input Arguments
+            %   x - Current state
+            %       real vector
+            %   x_ref - Reference state
+            %       real vector
+            %
+            % Output Arguments
+            %   x_ref_fixed - Fixed reference state
+            %       real vector
 
-            % Exact sampling
-            % continuous_sys = ss(A, B, eye(obj.n), zeros(obj.n, obj.m));
-            % discrete_sys = c2d(continuous_sys, obj.Ts);
-            % A_discrete = discrete_sys.A;
-            % B_discrete = discrete_sys.B;
+            % Compute the angle between the current and reference states
+            delta_theta = atan2(sin(x(3:3:end) - x_ref(3:3:end)), cos(x(3:3:end) - x_ref(3:3:end)));
 
-            % Euler discretization
-            A_discrete = eye(obj.n) + A * obj.Ts;
-            B_discrete = B * obj.Ts;
-        end            
+            % Fix the angular components w.r.t. current/predicted states
+            x_ref_fixed = x_ref;
+            x_ref_fixed(3:3:end) = x(3:3:end) - delta_theta;
+        end
 
     end
 end
