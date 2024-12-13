@@ -1,54 +1,48 @@
-% MPC Reference Tracking with Unicycle Model
+% ┌─────────────────────────────────────────────────────────────────────────┐ %
+% │                            MPC Tracking Main                            │ %
+% └─────────────────────────────────────────────────────────────────────────┘ %
 clear all
 clc
 
-% Model parameters -------------------------------------------------------------
+% Model parameters
 r  = 0.1;                           % wheel radius
 L  = 0.5;                           % distance between wheels
 Ts = 0.1;                           % sampling time
-omega_limits = [-30, 30];           % angular velocity limits
-x_limits = [-2, 2];                 % x position limits
-y_limits = [-2, 2];                 % y position limits
-theta_limits = [-2*pi, 2*pi];           % heading angle limits
+x_constraints = [
+    -2 2;                           % x position constraints
+    -2 2;                           % y position constraints
+     0 2*pi;                        % heading angle constraints
+];
+u_constraints = [-30, 30];          % angular velocity constraints
+model = Unicycle(r, L, Ts, x_constraints, u_constraints);
 
-% Initialize unicycle model object
-unicycle = Unicycle(r, L, Ts, omega_limits, x_limits, y_limits, theta_limits);
-n = unicycle.n;                     % number of states
-m = unicycle.m;                     % number of inputs
+% Simulation parameters
+x0 = [0; 0; 7*pi/4;];               % initial state
+Tend = 90*Ts;                       % simulation time
+t = 0:Ts:Tend;                      % vector of time steps
 
-% Simulation parameters and MPC parameters -------------------------------------
-x0 = [0; 0; 2*pi;];               % initial state
-N  = 3;                            % prediction horizon
-t  = 0:Ts:(30*Ts);                  % time vector
-T  = length(t)-(N+1);               % simulation time (number of steps)
-Q  = 1000*eye(n);                   % state cost
-% Q = [
-%     1000 0 0;
-%     0 1000 0;
-%     0 0 0.0001];
-R  = eye(m);                        % input cost
-preview = 1;                        % MPC preview flag
-formulation = 0;                    % formulation to use for MPC problem
-
-% Quadprog optimization options
-options = optimoptions('quadprog', 'Display', 'none');  % silent
-% options = optimoptions('quadprog', 'Display', 'iter');  % verbose
-
-% Reference trajectory ---------------------------------------------------------
-x_ref = zeros(length(t), n);
-u_ref = zeros(length(t), m);
+% Reference trajectory
+x_ref = zeros(length(t), model.n);
+u_ref = zeros(length(t), model.m);
 for i = 1:length(t)
     x_ref(i, :) = [cos(t(i)), sin(t(i)), wrapTo2Pi(0.5 * pi + t(i))];
     u_ref(i, :) = [(2-L)/(2*r), (2+L)/(2*r)];
 end
 
-% MPC Reference Tracking -------------------------------------------------------
+% MPC parameters
+N  = 5;                             % prediction horizon
+Q  = 1000*eye(model.n);             % state cost
+R  = eye(model.m);                  % input cost
+preview = 1;                        % MPC preview flag
+formulation = 0;                    % MPC formulation flag
+debug = 0;                          % MPC debug flag
+Nsteps = length(t) - (N+1);         % number of MPC optimization steps
 
-% Initialize the MPC optimization problem and solve it
-mpc = MPC(Q, R, N, unicycle, x_ref, u_ref, x0, Ts, t, T, preview, formulation, options);
+% Optimization
+mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, debug);
 [x, u] = mpc.optimize();
 
-% Plot -------------------------------------------------------------------------
+% Plot
 
 % Main trajectory plot
 figure(1);
@@ -71,8 +65,14 @@ grid on;
 axis equal;
 hold on;
 
+%%%%%%%%%%
+% <<<<<<<<
+%%%%%%%%%%
+% Wait for figure
+pause(1);
+
 % Real trajectory
-for i = 1:T
+for i = 1:Nsteps
     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
     x_line.Color(4) = 0.5; % line transparency 50%
     hold on;
@@ -83,7 +83,7 @@ for i = 1:T
     hold on;
 
     pause(0.05);
-    if i < T
+    if i < Nsteps
         delete(x_line);
     end
 end
