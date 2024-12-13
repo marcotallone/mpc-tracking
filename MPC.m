@@ -17,7 +17,7 @@
 %
 % 	Input Arguments
 % 		model - System model
-% 			object
+% 			DynamicalSystem object
 % 		x0 - Initial state
 % 			real vector
 % 		Tend - Simulation time
