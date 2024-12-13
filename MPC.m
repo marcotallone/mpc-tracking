@@ -622,7 +622,7 @@ classdef MPC < handle
 				[A, B, D] = obj.set_formulation(x_last, u_pred);
 
 				% Fix angle representation in X_REF
-				obj.X_REF = obj.model.fix_angle(obj.x_pred, obj.X_REF);
+				obj.X_REF = obj.model.fix_angles(obj.x_pred, obj.X_REF);
 
 				% Set augmented reference state Z_REF
 				obj.Z_REF = [obj.X_REF; obj.U_REF];
