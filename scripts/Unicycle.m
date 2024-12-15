@@ -72,9 +72,9 @@ classdef Unicycle < DynamicalSystem
         n = 3;      % number of states
         m = 2;      % number of inputs
         p = 3;      % number of outputs
-        Ts          % sampling time
-        r           % wheel radius
-        L           % distance between wheels
+        Ts;         % sampling time
+        r;          % wheel radius
+        L;          % distance between wheels
         min_omega;  % minimum angular velocity
         max_omega;  % maximum angular velocity
         min_x;      % minimum x position
@@ -87,6 +87,13 @@ classdef Unicycle < DynamicalSystem
         f_x;        % state constraints vector
         eps_u;      % input constraints matrix
         f_u;        % input constraints vector
+        sym_r;      % symbolic wheel radius
+        sym_L;      % symbolic distance between wheels
+        sym_x;      % symbolic state vector
+        sym_u;      % symbolic input vector
+        sym_f;      % symbolic state transition function
+        sym_A;      % symbolic state matrix
+        sym_B;      % symbolic input matrix
     end
     
     methods
@@ -132,6 +139,21 @@ classdef Unicycle < DynamicalSystem
                 -obj.min_omega;
             ];
 
+            % Initialize symbolic properties
+            syms x_pos y_pos theta omega1 omega2 real
+            syms sym_r sym_L
+            obj.sym_r = sym_r;
+            obj.sym_L = sym_L;
+            obj.sym_x = [x_pos; y_pos; theta];
+            obj.sym_u = [omega1; omega2];
+            v = sym_r / 2 * (omega1 + omega2);
+            omega = sym_r / sym_L * (omega2 - omega1);
+            dx_posdt = v * cos(theta);
+            dy_posdt = v * sin(theta);
+            dthetadt = omega;
+            obj.sym_f = [dx_posdt; dy_posdt; dthetadt];
+            obj.sym_A = jacobian(obj.sym_f, obj.sym_x);
+            obj.sym_B = jacobian(obj.sym_f, obj.sym_u);
         end
 
         % State transition function: non-linear continuous dynamics
@@ -215,20 +237,8 @@ classdef Unicycle < DynamicalSystem
             %   B_lin - Linearized input matrix
             %       real matrix
 
-            syms x_pos y_pos theta omega1 omega2 real
-            syms r L
-            x = [x_pos; y_pos; theta];
-            u = [omega1; omega2];
-            v = r / 2 * (omega1 + omega2);
-            omega = r / L * (omega2 - omega1);
-            dx_posdt = v * cos(theta);
-            dy_posdt = v * sin(theta);
-            dthetadt = omega;
-            f = [dx_posdt; dy_posdt; dthetadt];
-            A = jacobian(f, x);
-            B = jacobian(f, u);
-            A_lin = double(subs(A, [x; u; r; L], [x_bar; u_bar; obj.r; obj.L]));
-            B_lin = double(subs(B, [x; u; r; L], [x_bar; u_bar; obj.r; obj.L]));
+            A_lin = double(subs(obj.sym_A, [obj.sym_x; obj.sym_u; obj.sym_r; obj.sym_L], [x_bar; u_bar; obj.r; obj.L]));
+            B_lin = double(subs(obj.sym_B, [obj.sym_x; obj.sym_u; obj.sym_r; obj.sym_L], [x_bar; u_bar; obj.r; obj.L]));
         end
 
         % Fix reference angles function
