@@ -50,7 +50,6 @@ function m = m(t)
 end
 
 % Express z components as linear combination of basis functions
-% with coefficients alpha
 function z = z(t, alpha)
     p = 2; % Number of basis functions
     n = 4; % Number of states
@@ -61,6 +60,8 @@ function z = z(t, alpha)
     for k = 1:p
         basis(k) = x^(k-1);
     end
+
+    % Evaluate the basis functions at t
     basis_values = zeros(p, 1);
     for i = 1:p
         basis_values(i) = subs(basis(i), x, t);
@@ -71,34 +72,33 @@ function z = z(t, alpha)
 
     % Compute z(t)
     z = alpha * basis_values;
-
-    %// TODO: rewrite z(t) as a symbolic function and evaluate it later...
-        % Look at this:
-% % Define the symbolic variable
-% syms x
-
-% % Define the basis vector
-% basis = [1, x];
-
-% % Define the alpha2 matrix
-% alpha2 = [
-%     0.1822, 0.0818;
-%    -6.2117, 0.6212;
-%          0,      0;
-%     1.5708, 0.6283
-% ];
-
-% % Perform the multiplication
-% result = alpha2 * basis.';
-
-% % Display the result
-% disp(result);
-
 end
 
+function z = z2(alpha)
+    p = 2; % Number of basis functions
+    n = 4; % Number of states
+
+    % Define the symbolic variable
+    syms x
+
+    % Define the basis vector
+    basis = sym('x', [1 p]);
+    for k = 1:p
+        basis(k) = x^(k-1);
+    end
+
+    % Reshape alpha
+    alpha = reshape(alpha, [], n)';
+
+    % Perform the multiplication
+    z = alpha * basis.';
+end
+
+
 % Generate missing trajectory between all guide points
-% Z = zeros(length(t), 4);
 Z = [];
+Z2 = [];
+syms x;
 for i = 1:length(T)-1
     % Matrix M
     mi_0 = m(T(i));
@@ -113,19 +113,43 @@ for i = 1:length(T)-1
     % Solve the linear system
     alpha = M\z_bar;
 
+    % Define z(t) as a symbolic function
+    z2_ = z2(alpha);
+
     % Generate missing trajectory between T(i) and T(i+1) with z(t)
     N_filling_points = ceil((T(i+1) - T(i))/Ts);
     ti = linspace(T(i), T(i+1), N_filling_points);
     for j = 1:length(ti) - 1
-        % Z((i-1)*length(ti) + j, :) = z(ti(j), alpha)';
-        Z = [Z; z(ti(j), alpha)'];
+
+        % % check that z(tj) == z2_(tj) otherwise stop
+        % z1 = z(ti(j), alpha)';
+        % % z2s = double(subs(z2_, x, ti(j)))';
+        % z2s = zeros(1, n);
+        % for k = 1:n
+        %     z2s(k) = subs(z2_(k), x, ti(j));
+        % end
+
+        % if ~isequal(z1, z2s)
+        %     disp(z1);
+        %     disp(z2s);
+        %     disp(z2_);
+        %     error('Mismatch between z(t) and z2(t) at t = %f', ti(j));
+        % end
+
+        % Z = [Z; z(ti(j), alpha)'];
+        Z = [Z; double(subs(z2_, x, ti(j)))'];
+        % Z2 = [Z2; double(subs(z2_, x, ti(j)))'];
     end
 end
 
-% //TODO: recall at the end to wrap all the angles between 0 and 2Pi because it's not done here...
+% % //TODO: recall at the end to wrap all the angles between 0 and 2Pi because it's not done here...
 for i = 1:length(Z)
     Z(i, 4) = wrapTo2Pi(Z(i,4));
 end
+% for i = 1:length(Z2)
+%     Z2(i, 4) = wrapTo2Pi(Z2(i,4));
+% end
+
 
 % Model parameters
 bx = 2;
@@ -140,50 +164,36 @@ kphi = -5;
 
 
 
+% Plot
+figure(1);
 
+% Reference trajectory
+ref_points = scatter(Z_guide(:, 1), Z_guide(:, 2), 15, 'filled', 'MarkerFaceColor', '#808080');
+hold on;
+arrow_length = 0.03;
+for i = 1:length(T)
+    x_arrow = arrow_length * cos(Z_guide(i, 4));
+    y_arrow = arrow_length * sin(Z_guide(i, 4));
+    quiver(Z_guide(i, 1), Z_guide(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
+end
+hold on;
 
+% Filling the missing trajectory
+ref_points_filling = scatter(Z(:, 1), Z(:, 2), 5, 'filled', 'MarkerFaceColor', '#FF0000');
+hold on;
+for i = 1:length(Z)
+    x_arrow = arrow_length * cos(Z(i, 4));
+    y_arrow = arrow_length * sin(Z(i, 4));
+    quiver(Z(i, 1), Z(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#FF0000');
+end
+hold on;
 
+% legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
+legend([ref_points, ref_points_filling],{'Reference trajectory', 'Filling trajectory'}, 'Location', 'northwest');
 
-
-
-
-
-
-
-
-
-
-
-% % Plot
-% figure(1);
-
-% % Reference trajectory
-% ref_points = scatter(Z_guide(:, 1), Z_guide(:, 2), 15, 'filled', 'MarkerFaceColor', '#808080');
-% hold on;
-% arrow_length = 0.03;
-% for i = 1:length(T)
-%     x_arrow = arrow_length * cos(Z_guide(i, 4));
-%     y_arrow = arrow_length * sin(Z_guide(i, 4));
-%     quiver(Z_guide(i, 1), Z_guide(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
-% end
-% hold on;
-
-% % Filling the missing trajectory
-% ref_points_filling = scatter(Z(:, 1), Z(:, 2), 5, 'filled', 'MarkerFaceColor', '#FF0000');
-% hold on;
-% for i = 1:length(Z)
-%     x_arrow = arrow_length * cos(Z(i, 4));
-%     y_arrow = arrow_length * sin(Z(i, 4));
-%     quiver(Z(i, 1), Z(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#FF0000');
-% end
-% hold on;
-
-% % legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
-% legend([ref_points, ref_points_filling],{'Reference trajectory', 'Filling trajectory'}, 'Location', 'northwest');
-
-% % Labels
-% xlabel('x1'); ylabel('x2');
-% grid on;
-% axis equal;
-% hold on;
+% Labels
+xlabel('x1'); ylabel('x2');
+grid on;
+axis equal;
+hold on;
 
