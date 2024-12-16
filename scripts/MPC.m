@@ -552,6 +552,12 @@ classdef MPC < handle
 
 			[UMPC, ~, EXITFLAG] = quadprog((H+H')/2, f, EPS, F, EPS_eq, F_eq, [], [], [], obj.options);
 			if EXITFLAG == -2
+				disp("Size of H:"); disp(size(H));
+				disp("Size of f:"); disp(size(f));
+				disp("Size of EPS:"); disp(size(EPS));
+				disp("Size of F:"); disp(size(F));
+				disp("Size of EPS_eq:"); disp(size(EPS_eq));
+				disp("Size of F_eq:"); disp(size(F_eq));
 				error('Something wrong with the optimization at iteration ' + string(k))
 			end
 		end
@@ -582,6 +588,12 @@ classdef MPC < handle
 
 			[ZMPC, ~, EXITFLAG] = quadprog((H+H')/2, f, EPS, F, EPS_eq, F_eq, [], [], [], obj.options);
 			if EXITFLAG == -2
+				disp("Size of H:"); disp(size(H));
+				disp("Size of f:"); disp(size(f));
+				disp("Size of EPS:"); disp(size(EPS));
+				disp("Size of F:"); disp(size(F));
+				disp("Size of EPS_eq:"); disp(size(EPS_eq));
+				disp("Size of F_eq:"); disp(size(F_eq));
 				error('Something wrong with the optimization at iteration ' + string(k))
 			end
 			UMPC = ZMPC(obj.model.n*obj.N+1:end);
