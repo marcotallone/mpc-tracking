@@ -1,17 +1,16 @@
-
 classdef Helicopter < DynamicalSystem
     properties
-        n = 10;
+        n = 8;
         m = 4;
-        p = 10;
+        p = 8;
         Ts;
         bx;
         by;
         bz;
-        bphi;
+        bpsi;
         kx;
         ky;
-        kphi;
+        kpsi;
         ki;
         g = 9.81;
         min_xi;
@@ -26,18 +25,18 @@ classdef Helicopter < DynamicalSystem
         max_vyb;
         min_vzb;
         max_vzb;
-        min_phi;
-        max_phi;
-        min_vphi;
-        max_vphi;
+        min_psi;
+        max_psi;
+        min_vpsi;
+        max_vpsi;
         min_ux;
         max_ux;
         min_uy;
         max_uy;
         min_uz;
         max_uz;
-        min_uphi;
-        max_uphi;
+        min_upsi;
+        max_upsi;
         eps_x;
         f_x;
         eps_u;
@@ -45,10 +44,10 @@ classdef Helicopter < DynamicalSystem
         sym_bx;
         sym_by;
         sym_bz;
-        sym_bphi;
+        sym_bpsi;
         sym_kx;
         sym_ky;
-        sym_kphi;
+        sym_kpsi;
         sym_ki;
         sym_x;
         sym_u;
@@ -63,17 +62,17 @@ classdef Helicopter < DynamicalSystem
 
             % Check that parameters contains exactly 8 elements
             if length(parameters) ~= 8
-                error('The parameters vector must be of the form [bx; by; bz; bphi; kx; ky; kphi; ki]');
+                error('The parameters vector must be of the form [bx; by; bz; bpsi; kx; ky; kpsi; ki]');
             end
 
             % Initialize the helicopter parameters
             obj.bx = parameters(1);
             obj.by = parameters(2);
             obj.bz = parameters(3);
-            obj.bphi = parameters(4);
+            obj.bpsi = parameters(4);
             obj.kx = parameters(5);
             obj.ky = parameters(6);
-            obj.kphi = parameters(7);
+            obj.kpsi = parameters(7);
             obj.ki = parameters(8);
             obj.Ts = Ts;
             obj.min_xi = x_constraints(1, 1);
@@ -88,18 +87,18 @@ classdef Helicopter < DynamicalSystem
             obj.max_vyb = x_constraints(5, 2);
             obj.min_vzb = x_constraints(6, 1);
             obj.max_vzb = x_constraints(6, 2);
-            obj.min_phi = x_constraints(7, 1);
-            obj.max_phi = x_constraints(7, 2);
-            obj.min_vphi = x_constraints(8, 1);
-            obj.max_vphi = x_constraints(8, 2);
+            obj.min_psi = x_constraints(7, 1);
+            obj.max_psi = x_constraints(7, 2);
+            obj.min_vpsi = x_constraints(8, 1);
+            obj.max_vpsi = x_constraints(8, 2);
             obj.min_ux = u_constraints(1, 1);
             obj.max_ux = u_constraints(1, 2);
             obj.min_uy = u_constraints(2, 1);
             obj.max_uy = u_constraints(2, 2);
             obj.min_uz = u_constraints(3, 1);
             obj.max_uz = u_constraints(3, 2);
-            obj.min_uphi = u_constraints(4, 1);
-            obj.max_uphi = u_constraints(4, 2);
+            obj.min_upsi = u_constraints(4, 1);
+            obj.max_upsi = u_constraints(4, 2);
 
             obj.eps_x = kron(eye(obj.n), [1; -1]);
             obj.f_x = [
@@ -115,10 +114,10 @@ classdef Helicopter < DynamicalSystem
                 -obj.min_vyb;
                 +obj.max_vzb;
                 -obj.min_vzb;
-                +obj.max_phi;
-                -obj.min_phi;
-                +obj.max_vphi;
-                -obj.min_vphi;                
+                +obj.max_psi;
+                -obj.min_psi;
+                +obj.max_vpsi;
+                -obj.min_vpsi;                
             ];
             obj.eps_u = kron(eye(obj.m), [1; -1]);
             obj.f_u = [
@@ -128,36 +127,36 @@ classdef Helicopter < DynamicalSystem
                 -obj.min_uy;
                 +obj.max_uz;
                 -obj.min_uz;
-                +obj.max_uphi;
-                -obj.min_uphi;
+                +obj.max_upsi;
+                -obj.min_upsi;
             ];
 
             % Initialize symbolic properties
-            syms sym_xi sym_yi sym_zi sym_vxb sym_vyb sym_vzb sym_phi sym_vphi real
-            syms sym_ux sym_uy sym_uz sym_uphi real
-            syms sym_bx sym_by sym_bz sym_bphi sym_kx sym_ky sym_kphi sym_ki real
+            syms sym_xi sym_yi sym_zi sym_vxb sym_vyb sym_vzb sym_psi sym_vpsi real
+            syms sym_ux sym_uy sym_uz sym_upsi
+            syms sym_bx sym_by sym_bz sym_bpsi sym_kx sym_ky sym_kpsi sym_ki
             
             obj.sym_bx = sym_bx;
             obj.sym_by = sym_by;
             obj.sym_bz = sym_bz;
-            obj.sym_bphi = sym_bphi;
+            obj.sym_bpsi = sym_bpsi;
             obj.sym_kx = sym_kx;
             obj.sym_ky = sym_ky;
-            obj.sym_kphi = sym_kphi;
+            obj.sym_kpsi = sym_kpsi;
             obj.sym_ki = sym_ki;
-            obj.sym_x = [sym_xi; sym_yi; sym_zi; sym_vxb; sym_vyb; sym_vzb; sym_phi; sym_vphi];
-            obj.sym_u = [sym_ux; sym_uy; sym_uz; sym_uphi];
+            obj.sym_x = [sym_xi; sym_yi; sym_zi; sym_vxb; sym_vyb; sym_vzb; sym_psi; sym_vpsi];
+            obj.sym_u = [sym_ux; sym_uy; sym_uz; sym_upsi];
 
-            dxidt = cos(sym_phi) * sym_vxb - sin(sym_phi) * sym_vyb;
-            dyidt = sin(sym_phi) * sym_vxb + cos(sym_phi) * sym_vyb;
+            dxidt = cos(sym_psi) * sym_vxb - sin(sym_psi) * sym_vyb;
+            dyidt = sin(sym_psi) * sym_vxb + cos(sym_psi) * sym_vyb;
             dzidt = sym_vzb;
-            dvxbdt = sym_bx * sym_ux + sym_kx * sym_vxb + sym_vphi * sym_vyb;
-            dvybdt = sym_by * sym_uy + sym_ky * sym_vyb - sym_vphi * sym_vxb;
+            dvxbdt = sym_bx * sym_ux + sym_kx * sym_vxb + sym_vpsi * sym_vyb;
+            dvybdt = sym_by * sym_uy + sym_ky * sym_vyb - sym_vpsi * sym_vxb;
             dvzbd = sym_bz * sym_uz - obj.g;
-            dphidt = sym_vphi;
-            dvphidt = sym_bphi * sym_uphi + sym_kphi * sym_vphi;
+            dpsidt = sym_vpsi;
+            dvpsidt = sym_bpsi * sym_upsi + sym_kpsi * sym_vpsi;
 
-            obj.sym_f = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dphidt; dvphidt];
+            obj.sym_f = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt];
             obj.sym_A = jacobian(obj.sym_f, obj.sym_x);
             obj.sym_B = jacobian(obj.sym_f, obj.sym_u);
         end
@@ -192,10 +191,10 @@ classdef Helicopter < DynamicalSystem
             dvxbdt = obj.bx * u(1) + obj.kx * x(4) + x(8) * x(5);
             dvybdt = obj.by * u(2) + obj.ky * x(5) - x(8) * x(4);
             dvzbd = obj.bz * u(3) - obj.g;
-            dphidt = x(8);
-            dvphidt = obj.bphi * u(4) + obj.kphi * x(8);
+            dpsidt = x(8);
+            dvpsidt = obj.bpsi * u(4) + obj.kpsi * x(8);
 
-            dxdt = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dphidt; dvphidt];
+            dxdt = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt];
         end
 
         % Simulation function
@@ -249,8 +248,24 @@ classdef Helicopter < DynamicalSystem
             %   B_lin - Linearized input matrix
             %       real matrix
 
-            A_lin = double(subs(obj.sym_A, [obj.sym_x; obj.sym_u; obj.sym_r; obj.sym_L], [x_bar; u_bar; obj.r; obj.L]));
-            B_lin = double(subs(obj.sym_B, [obj.sym_x; obj.sym_u; obj.sym_r; obj.sym_L], [x_bar; u_bar; obj.r; obj.L]));
+            % Combine all symbolic variables and their corresponding values
+            sym_vars = [
+                obj.sym_x; obj.sym_u; 
+                obj.sym_bx; obj.sym_by; obj.sym_bz; obj.sym_bpsi; 
+                obj.sym_kx; obj.sym_ky; obj.sym_kpsi
+            ];
+            values = [
+                x_bar; u_bar; 
+                obj.bx; obj.by; obj.bz; obj.bpsi; 
+                obj.kx; obj.ky; obj.kpsi
+            ];
+
+            % Ensure the sizes match
+            assert(length(sym_vars) == length(values), 'Sizes of symbolic variables and values arrays must match.');
+
+            % Substitute the values into the symbolic expressions
+            A_lin = double(subs(obj.sym_A, sym_vars, values));
+            B_lin = double(subs(obj.sym_B, sym_vars, values));
         end
 
         % Fix reference angles function
@@ -274,11 +289,11 @@ classdef Helicopter < DynamicalSystem
             %       real vector
 
             % Compute the angle between the current and reference states
-            delta_phi = atan2(sin(x(7:8:end) - x_ref(7:8:end)), cos(x(7:8:end) - x_ref(7:8:end)));
+            delta_psi = atan2(sin(x(7:8:end) - x_ref(7:8:end)), cos(x(7:8:end) - x_ref(7:8:end)));
 
             % Fix the angular components w.r.t. current/predicted states
             x_ref_fixed = x_ref;
-            x_ref_fixed(7:8:end) = x(7:8:end) - delta_phi;
+            x_ref_fixed(7:8:end) = x(7:8:end) - delta_psi;
         end
 
     end
