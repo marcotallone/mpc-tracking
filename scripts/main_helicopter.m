@@ -9,7 +9,7 @@ clc
 bx = 2;
 by = 2;
 bz = 18;
-bpsi = 110;
+bpsi = 111;
 kx = -0.5;
 ky = -0.5;
 kpsi = -5;
@@ -21,33 +21,39 @@ x_constraints = [
     -10, 10;
     -10, 10;
     -10, 10;
-    -30, 30;
-    -30, 30;
-    -20, 20;
+    -3, 3;
+    -3, 3;
+    -2, 2;
      0, 2*pi;
-    -250, 250;
+    -25, 25;
+    % -5, 5;
+    % -5, 5;
 ];
 u_constraints = [
-    -10, 10;
-    -10, 10;
-    -10, 10;
-    0, 10;
+    -1, 1;
+    -1, 1;
+    -1, 1;
+      0, 1;
 ];
 model = Helicopter(parameters, Ts, x_constraints, u_constraints);
 
 
 % Guide points for reference trajectory ────────────────────────────────────────
 nf = 4; % Number of flat-outputs
-Tend = 10;
 
+% Generation parameters
 N_intervals = 24;
 N_guide = N_intervals + 1; % Number of guide points (last == first)
+N_points_filling = 5; % Number of points between guide points
+Tend = N_intervals * N_points_filling * Ts;
+
+% Guide
 T_guide = linspace(0, Tend, N_guide);
 Z_guide = zeros(N_guide, nf);
 
 theta = 0;
 delta = 2*pi/N_intervals;
-radius = 5;
+radius = 0.5;
 for i = 1:N_guide
     Z_guide(i, :) = [radius*cos(theta), radius*sin(theta), 0, 0.5*pi + theta];
     theta = theta + delta;
@@ -56,7 +62,11 @@ end
 
 % Reference trajectory filling ─────────────────────────────────────────────────
 N_basis = 2; % Number of basis functions
-order = 0;   % Maximum differentiation order
+order = 1;   % Maximum differentiation order
+
+% Guide vectors for first and second derivatives
+dZ_guide = [zeros(1, nf)];
+% ddZ_guide = [zeros(1, nf)];
 
 % Basis functions
 syms x
@@ -82,7 +92,7 @@ Z_ref = [];
 x_ref = [];
 u_ref = [];
 % alpha_tensor = zeros(nf, N_basis, length(T_guide) - 1);
-for i = 1:length(T_guide) - 1
+for i = 1:2 %length(T_guide) - 1
 
     % Time interval
     t0 = T_guide(i);
@@ -90,13 +100,18 @@ for i = 1:length(T_guide) - 1
 
     % Matrix M
     m0 = m(t0, basis, order);
-    m1 = m(t1, basis, order);
+    m1 = m(t1, basis, 0);
     M0 = kron(eye(nf), m0);
     M1 = kron(eye(nf), m1);
     M = [M0; M1];
 
     % Guide points in the interval
-    z_bar = [Z_guide(i, 1:nf)'; Z_guide(i+1, 1:nf)'];
+    z_bar = [
+        Z_guide(i, 1:nf)';
+        dZ_guide(i, 1:nf)';
+        % ddZ_guide(i, 1:nf)';
+        Z_guide(i+1, 1:nf)';
+    ];
 
     % Solve the system and reshape
     alpha = M\z_bar;
@@ -108,8 +123,12 @@ for i = 1:length(T_guide) - 1
     dz = diff(z, x);
     ddz = diff(dz, x);
 
+    % Append to guide derivatives values for next interval
+    dZ_guide = [dZ_guide; double(subs(dz, x, t1))'];
+    % ddZ_guide = [ddZ_guide; double(subs(ddz, x, t1))'];
+
     % Generate missing points
-    N_filling = ceil((t1 - t0)/Ts);
+    N_filling = ceil((t1 - t0)/Ts) + 1;
     T_filling = linspace(t0, t1, N_filling);
     for j = 1:length(T_filling) - 1
 
@@ -124,8 +143,10 @@ for i = 1:length(T_guide) - 1
         dyb = -sin(z_t(4))*dz_t(1) + cos(z_t(4))*dz_t(2);
         dzb = dz_t(3);
         dpsi = dz_t(4);
+        % dxint = 0.0;    % augmented states reference always zero
+        % dyint = 0.0;    % augmented states reference always zero
 
-        x_t = [z_t(1), z_t(2), z_t(3), dxb, dyb, dzb, z_t(4), dpsi]; 
+        x_t = [z_t(1), z_t(2), z_t(3), dxb, dyb, dzb, z_t(4), dpsi]; %, dxint, dyint];
 
         ux = (cos(z_t(4))*(ddz_t(1) - kx*dz_t(1)) + sin(z_t(4))*(ddz_t(2) - kx*dz_t(2)))/bx;
         uy = (cos(z_t(4))*(ddz_t(2) - ky*dz_t(2)) + sin(z_t(4))*(-ddz_t(1) + ky*dz_t(1)))/by;
@@ -144,7 +165,7 @@ end
 
 % Plot Reference / Guide ───────────────────────────────────────────────────────
 figure(1);
-arrow_length = 0.03;
+arrow_length = 0.01;
 
 % Guide points
 guide_points = scatter(Z_guide(:, 1), Z_guide(:, 2), 15, 'filled', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', '#808080');
@@ -174,19 +195,53 @@ axis equal;
 hold on;
 
 
+% Simulate system to test trajectory ───────────────────────────────────────────
+x0 = x_ref(1, :)';
+% x = model.simulate(x0, u_ref, Tend);
+for i = 1:length(u_ref)
+    x_sim = model.simulate(x0, u_ref(i, :)', Ts);
+    x0 = x_sim;
+
+    % Plot
+    x_line = plot(x_sim(1), x_sim(2), 'green', 'LineWidth', 1);
+    x_line.Color(4) = 0.5; % line transparency 50%
+    hold on;
+    x_points = scatter(x_sim(1), x_sim(2), 5, 'green', 'filled');
+    hold on;
+    quiver(x_sim(1), x_sim(2), arrow_length * cos(x_sim(7)), arrow_length * sin(x_sim(7)), 'AutoScale', 'off', 'Color', 'green');
+    hold on;
+    target = scatter(Z_ref(i, 1), Z_ref(i, 2), 20, 'filled', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', 'red');
+    hold on;
+    legend([guide_points, reference_points, x_points, target],{'Guide Points', 'Reference trajectory', 'Real trajectory', 'Target'}, 'Location', 'northwest');
+    hold on;
+
+    pause(0.05);
+    if i < length(u_ref)
+        delete(x_line);
+        delete(target);
+    end
+end
+
+
 % MPC ──────────────────────────────────────────────────────────────────────────
+
+% Multiply references for multiple laps
+n_laps = 1;
+x_ref = repmat(x_ref, n_laps, 1);
+u_ref = repmat(u_ref, n_laps, 1);
+Tend = Tend*n_laps;
 
 % MPC parameters
 x0 = zeros(model.n,1);
-N  = 5;                             % prediction horizon
-% Q  = eye(model.n);                  % state cost
-% R  = eye(model.m);                  % input cost
-Q = 10*diag([50, 50, 5, 10, 3, 3, 1, 2]);
+% x0(9) = x0(1) - x_ref(1,1);
+% x0(10) = x0(2) - x_ref(1,2);
+% x0 = [0.5000; 0; 0; 0.2588; 0.0341; 0; 1.5708; 0.5236; 0; 0];
+N  = 18;
+Q = diag([50, 50, 5, 10, 3, 3, 1, 2]);  % 15, 15]);
 R = diag([2, 2, 2, 2]);
 preview = 1;                        % MPC preview flag
 formulation = 0;                    % MPC formulation flag
 debug = 0;                          % MPC debug flag
-Tend = 9;
 t = 0:Ts:Tend;
 Nsteps = length(t) - (N+1);         % number of MPC optimization steps
 
@@ -210,13 +265,14 @@ for i = 1:Nsteps
     hold on;
     quiver(x_mpc(1:i, 1), x_mpc(1:i, 2), arrow_length * cos(x_mpc(1:i, 7)), arrow_length * sin(x_mpc(1:i, 7)), 'AutoScale', 'off', 'Color', 'blue');
     hold on;
-    
-    % legend([ref_points, x_points],{'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
-    legend([guide_points, reference_points, x_points],{'Guide Points', 'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
+    target = scatter(Z_ref(i, 1), Z_ref(i, 2), 20, 'filled', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', 'red');
+    hold on;
+    legend([guide_points, reference_points, x_points, target],{'Guide Points', 'Reference trajectory', 'Real trajectory', 'Target'}, 'Location', 'northwest');
     hold on;
 
     pause(0.05);
     if i < Nsteps
         delete(x_line);
+        delete(target);
     end
 end

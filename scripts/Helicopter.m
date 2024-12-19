@@ -12,6 +12,8 @@ classdef Helicopter < DynamicalSystem
         ky;
         kpsi;
         ki;
+        % x_ref = 0.0;
+        % y_ref = 0.0;
         g = 9.81;
         min_xi;
         max_xi;
@@ -29,6 +31,10 @@ classdef Helicopter < DynamicalSystem
         max_psi;
         min_vpsi;
         max_vpsi;
+        % min_xint;
+        % max_xint;
+        % min_yint;
+        % max_yint;
         min_ux;
         max_ux;
         min_uy;
@@ -49,6 +55,8 @@ classdef Helicopter < DynamicalSystem
         sym_ky;
         sym_kpsi;
         sym_ki;
+        % sym_x_ref;
+        % sym_y_ref;
         sym_x;
         sym_u;
         sym_f;
@@ -91,6 +99,10 @@ classdef Helicopter < DynamicalSystem
             obj.max_psi = x_constraints(7, 2);
             obj.min_vpsi = x_constraints(8, 1);
             obj.max_vpsi = x_constraints(8, 2);
+            % obj.min_xint = x_constraints(9, 1);
+            % obj.max_xint = x_constraints(9, 2);
+            % obj.min_yint = x_constraints(10, 1);
+            % obj.max_yint = x_constraints(10, 2);
             obj.min_ux = u_constraints(1, 1);
             obj.max_ux = u_constraints(1, 2);
             obj.min_uy = u_constraints(2, 1);
@@ -117,7 +129,11 @@ classdef Helicopter < DynamicalSystem
                 +obj.max_psi;
                 -obj.min_psi;
                 +obj.max_vpsi;
-                -obj.min_vpsi;                
+                -obj.min_vpsi;
+                % +obj.max_xint;
+                % -obj.min_xint;
+                % +obj.max_yint;
+                % -obj.min_yint;               
             ];
             obj.eps_u = kron(eye(obj.m), [1; -1]);
             obj.f_u = [
@@ -132,9 +148,10 @@ classdef Helicopter < DynamicalSystem
             ];
 
             % Initialize symbolic properties
-            syms sym_xi sym_yi sym_zi sym_vxb sym_vyb sym_vzb sym_psi sym_vpsi real
+            syms sym_xi sym_yi sym_zi sym_vxb sym_vyb sym_vzb sym_psi sym_vpsi real %sym_xint sym_yint real
             syms sym_ux sym_uy sym_uz sym_upsi
             syms sym_bx sym_by sym_bz sym_bpsi sym_kx sym_ky sym_kpsi sym_ki
+            % syms sym_x_ref sym_y_ref
             
             obj.sym_bx = sym_bx;
             obj.sym_by = sym_by;
@@ -144,7 +161,9 @@ classdef Helicopter < DynamicalSystem
             obj.sym_ky = sym_ky;
             obj.sym_kpsi = sym_kpsi;
             obj.sym_ki = sym_ki;
-            obj.sym_x = [sym_xi; sym_yi; sym_zi; sym_vxb; sym_vyb; sym_vzb; sym_psi; sym_vpsi];
+            % obj.sym_x_ref = sym_x_ref;
+            % obj.sym_y_ref = sym_y_ref;
+            obj.sym_x = [sym_xi; sym_yi; sym_zi; sym_vxb; sym_vyb; sym_vzb; sym_psi; sym_vpsi]; % sym_xint; sym_yint];
             obj.sym_u = [sym_ux; sym_uy; sym_uz; sym_upsi];
 
             dxidt = cos(sym_psi) * sym_vxb - sin(sym_psi) * sym_vyb;
@@ -155,8 +174,10 @@ classdef Helicopter < DynamicalSystem
             dvzbd = sym_bz * sym_uz - obj.g;
             dpsidt = sym_vpsi;
             dvpsidt = sym_bpsi * sym_upsi + sym_kpsi * sym_vpsi;
+            % dxintdt = sym_ki * (sym_xi - sym_x_ref);
+            % dyintdt = sym_ki * (sym_yi - sym_y_ref);
 
-            obj.sym_f = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt];
+            obj.sym_f = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt]; %dxintdt; dyintdt];
             obj.sym_A = jacobian(obj.sym_f, obj.sym_x);
             obj.sym_B = jacobian(obj.sym_f, obj.sym_u);
         end
@@ -193,8 +214,10 @@ classdef Helicopter < DynamicalSystem
             dvzbd = obj.bz * u(3) - obj.g;
             dpsidt = x(8);
             dvpsidt = obj.bpsi * u(4) + obj.kpsi * x(8);
+            % dxintdt = obj.ki * (x(1) - obj.x_ref);
+            % dyintdt = obj.ki * (x(2) - obj.y_ref);
 
-            dxdt = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt];
+            dxdt = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt]; %dxintdt; dyintdt];
         end
 
         % Simulation function
@@ -252,12 +275,14 @@ classdef Helicopter < DynamicalSystem
             sym_vars = [
                 obj.sym_x; obj.sym_u; 
                 obj.sym_bx; obj.sym_by; obj.sym_bz; obj.sym_bpsi; 
-                obj.sym_kx; obj.sym_ky; obj.sym_kpsi
+                obj.sym_kx; obj.sym_ky; obj.sym_kpsi; obj.sym_ki;
+                % obj.sym_x_ref; obj.sym_y_ref
             ];
             values = [
                 x_bar; u_bar; 
                 obj.bx; obj.by; obj.bz; obj.bpsi; 
-                obj.kx; obj.ky; obj.kpsi
+                obj.kx; obj.ky; obj.kpsi; obj.ki;
+                % obj.x_ref; obj.y_ref
             ];
 
             % Ensure the sizes match
@@ -288,13 +313,36 @@ classdef Helicopter < DynamicalSystem
             %   x_ref_fixed - Fixed reference state
             %       real vector
 
+            idx = 7;
+            step = obj.n;
+
             % Compute the angle between the current and reference states
-            delta_psi = atan2(sin(x(7:8:end) - x_ref(7:8:end)), cos(x(7:8:end) - x_ref(7:8:end)));
+            % delta_psi = atan2(sin(x(7:8:end) - x_ref(7:8:end)), cos(x(7:8:end) - x_ref(7:8:end)));
+            delta_psi = atan2(sin(x(idx:step:end) - x_ref(idx:step:end)), cos(x(idx:step:end) - x_ref(idx:step:end)));
 
             % Fix the angular components w.r.t. current/predicted states
             x_ref_fixed = x_ref;
-            x_ref_fixed(7:8:end) = x(7:8:end) - delta_psi;
+            % x_ref_fixed(7:8:end) = x(7:8:end) - delta_psi;
+            x_ref_fixed(idx:step:end) = x(idx:step:end) - delta_psi;
         end
+
+        % % Update reference values function
+        % function update_references(obj, x_ref, y_ref)
+        %     % update_references
+        %     %   Update the reference values for the x and y positions
+        %     %
+        %     % Syntax
+        %     %   obj.update_references(x_ref, y_ref)
+        %     %
+        %     % Input Arguments
+        %     %   x_ref - Reference x position
+        %     %       real scalar
+        %     %   y_ref - Reference y position
+        %     %       real scalar
+
+        %     obj.x_ref = x_ref;
+        %     obj.y_ref = y_ref;
+        % end
 
     end
 end

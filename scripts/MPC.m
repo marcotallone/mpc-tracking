@@ -290,6 +290,11 @@ classdef MPC < handle
 			obj.x_pred = x_last;
 
 			for i = 1:N - 1
+
+				% % Update model's current reference x, y states
+				% xy_ref = obj.X_REF((i) * n + (1:n));
+				% obj.model.update_references(xy_ref(1), xy_ref(2));
+
 				% Linearize and discretize the system
 				x_bar = obj.x_pred(end - n + 1:end);               	 % linearization states 
 				u_bar = u_pred((i - 1) * m + (1:m));                 % linearization inputs
@@ -374,11 +379,16 @@ classdef MPC < handle
 			obj.Z_BAR = [];
 
 			for i = 1:N - 1
+
+				% % Update model's current reference x, y states
+				% xy_ref = obj.X_REF((i) * n + (1:n));
+				% obj.model.update_references(xy_ref(1), xy_ref(2));
+
+				% Linearize and discretize the system
 				x_bar = obj.x_pred(end - n + 1:end);               	 % linearization states
 				u_bar = u_pred((i - 1) * m + (1:m));                 % linearization inputs
 				obj.X_BAR = [obj.X_BAR; x_bar];
 				obj.U_BAR = [obj.U_BAR; u_bar];
-
 				[A_lin, B_lin] = obj.model.linearize(x_bar, u_bar);  % linearization
 				[A_k,   B_k]   = obj.model.discretize(A_lin, B_lin); % discretization
 
