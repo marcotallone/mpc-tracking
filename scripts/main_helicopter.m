@@ -62,10 +62,10 @@ end
 
 % Reference trajectory filling ─────────────────────────────────────────────────
 N_basis = 2; % Number of basis functions
-order = 1;   % Maximum differentiation order
+order = 0;   % Maximum differentiation order
 
 % Guide vectors for first and second derivatives
-dZ_guide = [zeros(1, nf)];
+% dZ_guide = [zeros(1, nf)];
 % ddZ_guide = [zeros(1, nf)];
 
 % Basis functions
@@ -91,7 +91,7 @@ end
 Z_ref = [];
 x_ref = [];
 u_ref = [];
-% alpha_tensor = zeros(nf, N_basis, length(T_guide) - 1);
+alpha_tensor = zeros(nf, N_basis, length(T_guide) - 1);
 for i = 1:2 %length(T_guide) - 1
 
     % Time interval
@@ -108,15 +108,24 @@ for i = 1:2 %length(T_guide) - 1
     % Guide points in the interval
     z_bar = [
         Z_guide(i, 1:nf)';
-        dZ_guide(i, 1:nf)';
+        % dZ_guide(i, 1:nf)';
         % ddZ_guide(i, 1:nf)';
         Z_guide(i+1, 1:nf)';
     ];
 
+    % Print inverse
+    % disp(inv(M));
+
+    % Check that M is full column rank
+    if rank(M) < size(M, 2)
+        disp('Matrix M is not full column rank');
+        return;
+    end
+
     % Solve the system and reshape
     alpha = M\z_bar;
     alpha = reshape(alpha, [], nf)';
-    % alpha_tensor(:, :, i) = alpha;
+    alpha_tensor(:, :, i) = alpha;
 
     % Reference function z(t) and its derivatives
     z = alpha*basis.';
@@ -124,7 +133,7 @@ for i = 1:2 %length(T_guide) - 1
     ddz = diff(dz, x);
 
     % Append to guide derivatives values for next interval
-    dZ_guide = [dZ_guide; double(subs(dz, x, t1))'];
+    % dZ_guide = [dZ_guide; double(subs(dz, x, t1))'];
     % ddZ_guide = [ddZ_guide; double(subs(ddz, x, t1))'];
 
     % Generate missing points
@@ -163,6 +172,38 @@ for i = 1:2 %length(T_guide) - 1
 end
 
 
+% Plotting ─────────────────────────────────────────────────────────────────────
+
+% % Plot the z(t) fnctions for every interval
+% figure(2);
+% for i = 1:length(T_guide) - 1
+% 
+%     % Time interval
+%     t0 = T_guide(i);
+%     t1 = T_guide(i+1);
+% 
+%     % Reconstruct z(t) of this interval
+%     alpha = alpha_tensor(:, :, i);
+%     z = alpha*basis.';
+% 
+%     % Plot the z(t) function
+%     ts = linspace(t0, t1, 100);
+%     zs = double(subs(z, x, ts));
+% 
+%     % Subplots for x = z(t)(1), y = z(t)(2), psi = z(t)(4)
+%     subplot(3, 1, 1);
+%     plot(ts, zs(1, :), 'blue');
+%     hold on;
+%     subplot(3, 1, 2);
+%     plot(ts, zs(2, :), 'red');
+%     hold on;
+%     subplot(3, 1, 3);
+%     plot(ts, zs(4, :), 'green');
+%     hold on;
+% 
+% end
+
+
 % Plot Reference / Guide ───────────────────────────────────────────────────────
 figure(1);
 arrow_length = 0.01;
@@ -196,9 +237,11 @@ hold on;
 
 
 % Simulate system to test trajectory ───────────────────────────────────────────
-x0 = x_ref(1, :)';
+x0 = x_ref(6, :)';
 % x = model.simulate(x0, u_ref, Tend);
-for i = 1:length(u_ref)
+t = 0:Ts:T_guide(3);
+% for i = 1:length(u_ref)
+for i = 6:length(t)-1
     x_sim = model.simulate(x0, u_ref(i, :)', Ts);
     x0 = x_sim;
 
