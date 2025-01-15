@@ -9,7 +9,7 @@
 % Methods
 %   discretize - Discretize a continuous-time linear system 
 
-classdef (Abstract) DynamicalSystem
+classdef (Abstract) DynamicalSystem < handle
     properties (Abstract)
         n       % number of states
         m       % number of inputs

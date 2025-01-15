@@ -94,6 +94,15 @@ classdef Unicycle < DynamicalSystem
         sym_f;      % symbolic state transition function
         sym_A;      % symbolic state matrix
         sym_B;      % symbolic input matrix
+        sym_g;      % symbolic output measurement
+        sym_C;      % symbolic output matrix
+
+        % EKF-related properties
+        x_hat         % Estimated state (n x 1)
+        P             % State covariance matrix (n x n)
+        Q             % Process noise covariance (n x n)
+        R             % Measurement noise covariance (p x p)
+
     end
     
     methods
@@ -154,6 +163,11 @@ classdef Unicycle < DynamicalSystem
             obj.sym_f = [dx_posdt; dy_posdt; dthetadt];
             obj.sym_A = jacobian(obj.sym_f, obj.sym_x);
             obj.sym_B = jacobian(obj.sym_f, obj.sym_u);
+
+            % Output measurement
+            obj.sym_g = [x_pos; y_pos; theta];
+            obj.sym_C = jacobian(obj.sym_g, obj.sym_x);
+
         end
 
         % State transition function: non-linear continuous dynamics
@@ -268,6 +282,75 @@ classdef Unicycle < DynamicalSystem
             x_ref_fixed = x_ref;
             x_ref_fixed(3:3:end) = x(3:3:end) - delta_theta;
         end
+
+        % Output transformation function
+        function y = output(obj, x, u)
+            % output
+            %   Output transformation function for the unicycle model
+            %
+            % Syntax
+            %   y = obj.output(x)
+            %
+            % Input Arguments
+            %   x - State vector
+            %       real vector
+            %
+            % Output Arguments
+            %   y - Output vector
+            %       real vector
+
+            y = x;
+        end
+
+        
+
+        % EKF-related functions
+
+        % Initialize the EKF
+        function initEKF(obj, x0, P0, Q, R)
+            obj.x_hat = x0; % Initial state estimate
+            obj.P = P0;     % Initial covariance
+            obj.Q = Q;      % Process noise covariance
+            obj.R = R;      % Measurement noise covariance
+        end
+
+
+        % Perform a full EKF step
+        function x_hat = stepEKF(obj, y, u)
+
+            % Prediction step
+
+            % State transition matrix
+            A = double(subs(obj.sym_A, [obj.sym_x; obj.sym_u; obj.sym_r; obj.sym_L], [obj.x_hat; u; obj.r; obj.L]));
+
+            % Predicted state estimate
+            x_hat = obj.simulate(obj.x_hat, u, obj.Ts);
+
+            % Predicted covariance estimate
+            P = A * obj.P * A' + obj.Q;
+
+
+            % Update step
+
+            % Output transformation matrix
+            C = double(subs(obj.sym_C, [obj.sym_x; obj.sym_u; obj.sym_r; obj.sym_L], [x_hat; u; obj.r; obj.L]));
+
+            % Kalman gain
+            K = P * C' / (C * P * C' + obj.R);
+
+            % Updated state estimate
+            x_hat = x_hat + K * (y - obj.output(x_hat, u));
+
+            % Updated covariance estimate
+            P = (eye(size(P)) - K * C) * P;
+
+
+            % Update the object properties
+            obj.x_hat = x_hat;
+            obj.P = P;
+            
+        end
+
 
     end
 end
