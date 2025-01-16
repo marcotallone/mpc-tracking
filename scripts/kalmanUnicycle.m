@@ -11,11 +11,18 @@ x_constraints = [
      0 2*pi;                        % heading angle constraints
 ];
 u_constraints = [-30, 30];          % angular velocity constraints
-model = Unicycle(r, L, Ts, x_constraints, u_constraints);
+
+model_n = 3;
+model_p = 2;
+Q_tilde = 0.25*1e-3*eye(model_n);        % Process noise covariance
+R_tilde = 1e-5*eye(model_p);        % Measurement noise covariance
+P0 = eye(model_n);                  % Initial state covariance
+
+model = Unicycle(r, L, Ts, x_constraints, u_constraints, P0, Q_tilde, R_tilde);
 
 % Simulation parameters
 x0 = [1; 0; pi/2;];                 % initial state
-Tend = 90*Ts;                       % simulation time
+Tend = 63*Ts;                       % simulation time
 t = 0:Ts:Tend;                      % vector of time steps
 
 % Reference trajectory
@@ -26,49 +33,45 @@ for i = 1:length(t)
     u_ref(i, :) = [(2-L)/(2*r), (2+L)/(2*r)];
 end
 
-% Covariance matrices for noise
-
-Qtilde = 1e-4*eye(model.n);           % Process noise covariance
-Rtilde = 1e-4*eye(model.p);           % Measurement noise covariance
-P0 = eye(model.n);               % Initial state covariance
-
-% Noise components genration for Kalman filter
-% model state n = 3, model output measurements = 3
-function [w, v] = generateNoise(model, Qtilde, Rtilde, Tend, Ts)
-    w = mvnrnd(zeros(model.n, 1), Qtilde, length(0:Ts:Tend))';
-    v = mvnrnd(zeros(model.p, 1), Rtilde, length(0:Ts:Tend))';
-end
-
-% Initial conditions
-[w, v] = generateNoise(model, Qtilde, Rtilde, Tend, Ts);
-w = w'; v = v';
+% Noise components generation for Kalman filter
+w = mvnrnd(zeros(model.n, 1), Q_tilde, length(0:Ts:Tend));
+v = mvnrnd(zeros(model.p, 1), R_tilde, length(0:Ts:Tend));
 
 
-% Kalman filter
-model.initEKF(x0, P0, Qtilde, Rtilde);
+% Simulation arrays
+
+% Simulation without noise
+x = [x0'];
+
+% Simulation real system with noise
+x_real = [x0'];
+
+% Simulation Kalman filter with noise
+% x_hat = [ ( x0 + mvnrnd(zeros(model.n, 1), P0) )' ];
+% x_hat = [ ( x0 + (randn(1, model.n) * chol(P0))' )' ];
+x_hat = [ ( x0 + w(1,:)' )' ];
+
+% Simulation without Kalman filter
+% x_sim = [x_hat(1, :)];
 
 
 % Simulation loop 
-x = [x0'];
-x_sim = [(x0 + w(1,:)')'];
-x_hat = [(x0 + w(1,:)')'];
+for i = 2:length(t)
 
-for i = 1:length(t)
+    % Simulate the system without noise
+    x = [x; (model.simulate(x(end, :)', u_ref(i, :)', Ts))'];
 
     % Simulate the real system
-    x_real = model.simulate(x(end, :)', u_ref(i, :)', Ts);
+    update_real = model.simulate(x_real(end, :)', u_ref(i, :)', Ts) + w(i, :)';
+    x_real = [x_real; update_real'];
 
-    % Simulate with noise
-    x_simulated = x_real + w(i, :)';
+    % Extended Kalman filter step
+    y = model.output(update_real, u_ref(i, :)') + v(i, :)';
+    x_hat = [x_hat; (model.EKF_step(x_hat(end, :)', u_ref(i, :)', y))'];
 
-    % EKF step
-    y = model.output(x_simulated, u_ref(i, :)') + v(i, :)';
-    x_kalman = model.stepEKF(y, u_ref(i, :)');
-
-    % Update arrays
-    x = [x; x_real'];
-    x_sim = [x_sim; x_simulated'];
-    x_hat = [x_hat; x_kalman'];
+    % Simulate the system without Kalman filter
+    % x_sim = [x_sim; (model.simulate(x_hat(i-1, :)', u_ref(i, :)', Ts))'];
+    % x_sim = [x_sim; (model.simulate(x_hat(i-1, :)', u_ref(i, :)', Ts))'];
 
 end
 
@@ -91,7 +94,7 @@ legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
 
 % Labels
 title('Trajectory Tracking with MPC (Non-Linear Unicycle System)');
-xlabel('x1'); ylabel('x2');
+xlabel('x'); ylabel('y');
 grid on;
 axis equal;
 hold on;
@@ -106,46 +109,98 @@ pause(1);
 Nsteps = length(t);
 for i = 1:Nsteps
 
-    % % Real trajectory
-
-    % x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
-    % x_line.Color(4) = 0.5; % line transparency 50%
-    % hold on;
-    % x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
-    % hold on;
-    % quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 3)), arrow_length * sin(x(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
-    % legend([ref_points, x_points],{'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
-    % hold on;
-
-    % pause(0.05);
-    % if i < Nsteps
-    %     delete(x_line);
-    % end
-
-    % Simulated noisy trajectory
-    x_sim_line = plot(x_sim(1:i, 1), x_sim(1:i, 2), 'blue', 'LineWidth', 1);
-    x_sim_line.Color(4) = 0.5; % line transparency 50%
+    % Simulation without noise (black dotted line only)
+    x_line = plot(x(1:i, 1), x(1:i, 2), 'black', 'LineWidth', 1, 'LineStyle', '--');
+    x_line.Color(4) = 0.5; % line transparency 50%
     hold on;
-    x_sim_points = scatter(x_sim(1:i, 1), x_sim(1:i, 2), 5, 'blue', 'filled');
+    legend([ref_points, x_line],{'Reference trajectory', 'No Noise'}, 'Location', 'northwest');
     hold on;
-    quiver(x_sim(1:i, 1), x_sim(1:i, 2), arrow_length * cos(x_sim(1:i, 3)), arrow_length * sin(x_sim(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
-    legend([ref_points, x_sim_points],{'Reference trajectory', 'Simulated noisy trajectory'}, 'Location', 'northwest');
+
+    % Simulation real system with noise
+    x_real_line = plot(x_real(1:i, 1), x_real(1:i, 2), 'blue', 'LineWidth', 1);
+    x_real_line.Color(4) = 0.5; % line transparency 50%
+    hold on;
+    x_real_points = scatter(x_real(1:i, 1), x_real(1:i, 2), 5, 'blue', 'filled');
+    hold on;
+    quiver(x_real(1:i, 1), x_real(1:i, 2), arrow_length * cos(x_real(1:i, 3)), arrow_length * sin(x_real(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
+    legend([ref_points, x_line, x_real_points],{'Reference trajectory', 'No Noise', 'With noise'}, 'Location', 'northwest');
     hold on;
 
     % Kalman filter estimated trajectory
     x_hat_line = plot(x_hat(1:i, 1), x_hat(1:i, 2), 'red', 'LineWidth', 1);
     x_hat_line.Color(4) = 0.5; % line transparency 50%
     hold on;
-    x_hat_points = scatter(x_hat(1:i, 1), x_hat(1:i, 2), 5, 'red', 'filled'); 
+    x_hat_points = scatter(x_hat(1:i, 1), x_hat(1:i, 2), 5, 'red', 'filled');
     hold on;
     quiver(x_hat(1:i, 1), x_hat(1:i, 2), arrow_length * cos(x_hat(1:i, 3)), arrow_length * sin(x_hat(1:i, 3)), 'AutoScale', 'off', 'Color', 'red');
-    legend([ref_points, x_sim_points, x_hat_points],{'Reference trajectory', 'Simulated noisy trajectory', 'Kalman filter estimated trajectory'}, 'Location', 'northwest');
+    legend([ref_points, x_line, x_real_points, x_hat_points],{'Reference trajectory', 'No Noise', 'With noise', 'Kalman filter'}, 'Location', 'northwest');
     hold on;
+
+    % Simulation without Kalman filter
+    % x_no_kal_line = plot(x_sim(1:i, 1), x_sim(1:i, 2), 'green', 'LineWidth', 1);
+    % x_no_kal_line.Color(4) = 0.5; % line transparency 50%
+    % hold on;
+    % x_no_kal_points = scatter(x_sim(1:i, 1), x_sim(1:i, 2), 5, 'green', 'filled');
+    % hold on;
+    % quiver(x_sim(1:i, 1), x_sim(1:i, 2), arrow_length * cos(x_sim(1:i, 3)), arrow_length * sin(x_sim(1:i, 3)), 'AutoScale', 'off', 'Color', 'green');
+    % legend([ref_points, x_line, x_real_points, x_hat_points, x_no_kal_points],{'Reference trajectory', 'No Noise', 'With noise', 'Kalman filter', 'No Kalman filter'}, 'Location', 'northwest');
+    % hold on;
 
     pause(0.05);
     if i < Nsteps
-        delete(x_sim_line);
+        delete(x_line);
+        delete(x_real_line);
         delete(x_hat_line);
+        % delete(x_no_kal_line);
     end
 
 end
+
+
+% % Plot the state and the estimated state for x, y, theta over time
+figure(2);
+
+% x
+subplot(3, 1, 1);
+plot(t, x(:, 1), 'black', 'LineWidth', 1, 'LineStyle', '--');
+hold on;
+plot(t, x_real(:, 1), 'blue', 'LineWidth', 1);
+hold on;
+plot(t, x_hat(:, 1), 'red', 'LineWidth', 1);
+hold on;
+% plot(t, x_sim(:, 1), 'green', 'LineWidth', 1);
+% hold on;
+xlabel('Time [s]');
+ylabel('x');
+legend('No Noise', 'With noise', 'Kalman filter');
+grid on;
+
+% y
+subplot(3, 1, 2);
+plot(t, x(:, 2), 'black', 'LineWidth', 1, 'LineStyle', '--');
+hold on;
+plot(t, x_real(:, 2), 'blue', 'LineWidth', 1);
+hold on;
+plot(t, x_hat(:, 2), 'red', 'LineWidth', 1);
+hold on;
+% plot(t, x_sim(:, 2), 'green', 'LineWidth', 1);
+% hold on;
+xlabel('Time [s]');
+ylabel('y');
+legend('No Noise', 'With noise', 'Kalman filter');
+grid on;
+
+% theta
+subplot(3, 1, 3);
+plot(t, x(:, 3), 'black', 'LineWidth', 1, 'LineStyle', '--');
+hold on;
+plot(t, x_real(:, 3), 'blue', 'LineWidth', 1);
+hold on;
+plot(t, x_hat(:, 3), 'red', 'LineWidth', 1);
+hold on;
+% plot(t, x_sim(:, 3), 'green', 'LineWidth', 1);
+% hold on;
+xlabel('Time [s]');
+ylabel('theta');
+legend('No Noise', 'With noise', 'Kalman filter');
+grid on;

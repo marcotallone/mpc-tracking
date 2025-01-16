@@ -69,12 +69,16 @@
 
 classdef Unicycle < DynamicalSystem
     properties
+
+        % Model parameters
         n = 3;      % number of states
         m = 2;      % number of inputs
-        p = 3;      % number of outputs
+        p = 2;      % number of outputs
         Ts;         % sampling time
         r;          % wheel radius
         L;          % distance between wheels
+
+        % Constraints
         min_omega;  % minimum angular velocity
         max_omega;  % maximum angular velocity
         min_x;      % minimum x position
@@ -87,27 +91,27 @@ classdef Unicycle < DynamicalSystem
         f_x;        % state constraints vector
         eps_u;      % input constraints matrix
         f_u;        % input constraints vector
+
+        % Symbolic properties
         sym_r;      % symbolic wheel radius
         sym_L;      % symbolic distance between wheels
         sym_x;      % symbolic state vector
         sym_u;      % symbolic input vector
         sym_f;      % symbolic state transition function
-        sym_A;      % symbolic state matrix
-        sym_B;      % symbolic input matrix
         sym_g;      % symbolic output measurement
-        sym_C;      % symbolic output matrix
+        sym_A;      % symbolic state matrix         (n x n)
+        sym_B;      % symbolic input matrix         (n x m)
+        sym_C;      % symbolic output matrix        (p x n)
 
         % EKF-related properties
-        x_hat         % Estimated state (n x 1)
-        P             % State covariance matrix (n x n)
-        Q             % Process noise covariance (n x n)
-        R             % Measurement noise covariance (p x p)
-
+        P           % State covariance matrix       (n x n)
+        Q_tilde     % Process noise covariance      (n x n)
+        R_tilde     % Measurement noise covariance  (p x p)
     end
     
     methods
         % Constructor to initialize the unicycle parameters and state
-        function obj = Unicycle(r, L, Ts, x_constraints, u_constraints)
+        function obj = Unicycle(r, L, Ts, x_constraints, u_constraints, P0, Q_tilde, R_tilde)
             obj.r = r;
             obj.L = L;
             obj.Ts = Ts;
@@ -161,13 +165,15 @@ classdef Unicycle < DynamicalSystem
             dy_posdt = v * sin(theta);
             dthetadt = omega;
             obj.sym_f = [dx_posdt; dy_posdt; dthetadt];
+            obj.sym_g = [x_pos; y_pos];
             obj.sym_A = jacobian(obj.sym_f, obj.sym_x);
             obj.sym_B = jacobian(obj.sym_f, obj.sym_u);
-
-            % Output measurement
-            obj.sym_g = [x_pos; y_pos; theta];
             obj.sym_C = jacobian(obj.sym_g, obj.sym_x);
 
+            % Initialize EKF properties
+            obj.P = P0;
+            obj.Q_tilde = Q_tilde;
+            obj.R_tilde = R_tilde;
         end
 
         % State transition function: non-linear continuous dynamics
@@ -299,36 +305,22 @@ classdef Unicycle < DynamicalSystem
             %   y - Output vector
             %       real vector
 
-            y = x;
+            y = [x(1); x(2)];
         end
 
-        
-
-        % EKF-related functions
-
-        % Initialize the EKF
-        function initEKF(obj, x0, P0, Q, R)
-            obj.x_hat = x0; % Initial state estimate
-            obj.P = P0;     % Initial covariance
-            obj.Q = Q;      % Process noise covariance
-            obj.R = R;      % Measurement noise covariance
-        end
-
-
-        % Perform a full EKF step
-        function x_hat = stepEKF(obj, y, u)
+        % Extended Kalman Filter (EKF) step
+        function x_hat = EKF_step(obj, x_hat, u, y)
 
             % Prediction step
 
             % State transition matrix
-            A = double(subs(obj.sym_A, [obj.sym_x; obj.sym_u; obj.sym_r; obj.sym_L], [obj.x_hat; u; obj.r; obj.L]));
+            A = double(subs(obj.sym_A, [obj.sym_x; obj.sym_u; obj.sym_r; obj.sym_L], [x_hat; u; obj.r; obj.L]));
 
             % Predicted state estimate
-            x_hat = obj.simulate(obj.x_hat, u, obj.Ts);
+            x_hat = obj.simulate(x_hat, u, obj.Ts);
 
             % Predicted covariance estimate
-            P = A * obj.P * A' + obj.Q;
-
+            P = A * obj.P * A' + obj.Q_tilde;
 
             % Update step
 
@@ -336,18 +328,13 @@ classdef Unicycle < DynamicalSystem
             C = double(subs(obj.sym_C, [obj.sym_x; obj.sym_u; obj.sym_r; obj.sym_L], [x_hat; u; obj.r; obj.L]));
 
             % Kalman gain
-            K = P * C' / (C * P * C' + obj.R);
+            K = P * C' / (C * P * C' + obj.R_tilde);
 
             % Updated state estimate
             x_hat = x_hat + K * (y - obj.output(x_hat, u));
 
             % Updated covariance estimate
-            P = (eye(size(P)) - K * C) * P;
-
-
-            % Update the object properties
-            obj.x_hat = x_hat;
-            obj.P = P;
+            obj.P = (eye(size(P)) - K * C) * P;
             
         end
 
