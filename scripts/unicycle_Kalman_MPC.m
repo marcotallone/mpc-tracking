@@ -48,7 +48,7 @@ debug = 0;                          % MPC debug flag
 Nsteps = length(t) - (N+1);         % number of MPC optimization steps
 
 % Optimization
-mpc = noiseMPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
+mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
 [x, u] = mpc.optimize();
 
 % Plot

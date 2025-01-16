@@ -132,6 +132,7 @@ classdef MPC < handle
 		x_pred;     		% prediction states during horizon
 		preview;    		% MPC preview flag (0: no preview, 1: preview)
 		formulation			% MPC formulation flag (0: dense (explicit), 1: sparse (implicit))
+        noise;              % noise flag (0: no noise, 1: noise)
 		debug;    			% debug flag (0: no debug, 1: debug)
 		set_reference; 		% function handle to set reference states and inputs
 		set_formulation;	% function handle to set MPC formulation
@@ -142,12 +143,15 @@ classdef MPC < handle
 	
 	methods
 		% Constructor
-		function obj = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, debug)
+		function obj = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug)
 
 			% Set default values for optional arguments
-			if nargin < 11
+			if nargin < 12
 				debug = 0;
 			end
+            if nargin < 11
+                noise = 0;
+            end
 			if nargin < 10
 				formulation = 0;
 			end
@@ -208,6 +212,8 @@ classdef MPC < handle
 				obj.set_constraints = @obj.dense_constraints;
 				obj.solve = @obj.solve_dense;
 			end
+
+			obj.noise = noise;
 
 			obj.debug = debug;
 			if obj.debug
@@ -629,7 +635,14 @@ classdef MPC < handle
 
 			% Initialize the state and input vectors
 			x = obj.x0;
-			x_last = obj.x0;
+			if obj.noise
+				% Noise components generation for Kalman filter
+				w = mvnrnd(zeros(obj.model.n, 1), obj.model.Q_tilde, obj.Nsteps);
+				v = mvnrnd(zeros(obj.model.p, 1), obj.model.R_tilde, obj.Nsteps);
+				x_last = obj.x0 + w(1, :)';
+			else
+				x_last = obj.x0;
+			end
 			u = [];
 			obj.set_reference(1);
 			u_pred = obj.U_REF;
@@ -655,10 +668,18 @@ classdef MPC < handle
 				% Solve the optimization problem and get optimal input sequence
 				UMPC = obj.solve(H, f, EPS, F, EPS_eq, F_eq);
 
-				% Extract the optimal input and update state and input vectors
+				% Extract the optimal input and update the input vector
 				u_optimal = UMPC(1:m); % only pick the first inputs (of size m)
 				u = [u; u_optimal];
-				x_last = obj.model.simulate(x_last, u_optimal, obj.Ts);
+
+				% Update the state vector simulating the system with the optimal input
+				if obj.noise
+					update_last = obj.model.simulate(x_last, u_optimal, obj.Ts) + w(k,:)';
+					measured_output = obj.model.output(update_last, u_optimal) + v(k,:)';
+					x_last = obj.model.EKF_step(x_last, u_optimal, measured_output);
+				else
+					x_last = obj.model.simulate(x_last, u_optimal, obj.Ts);
+				end
 				x = [x; x_last];
 
 				% Update the prediction inputs with the remaining optimization results

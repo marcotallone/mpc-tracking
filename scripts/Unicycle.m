@@ -60,8 +60,10 @@
 % Methods
 %   dynamics - State transition function: non-linear continuous dynamics
 %   simulate - Simulation function
+%   output - Output transformation function
 %   linearize - Linearization function
 %   fix_angles - Fix reference angles function
+%   EKF_step - Extended Kalman Filter (EKF) state estimation step
 %
 % Examples
 %   unicycle = Unicycle(0.1, 0.5, 0.1, [-2 2; -2 2; 0 2*pi], [-30, 30]);
@@ -243,10 +245,12 @@ classdef Unicycle < DynamicalSystem
             %   Output transformation function for the unicycle model
             %
             % Syntax
-            %   y = obj.output(x)
+            %   y = obj.output(x, u)
             %
             % Input Arguments
             %   x - State vector
+            %       real vector
+            %   u - Input vector
             %       real vector
             %
             % Output Arguments
@@ -310,6 +314,24 @@ classdef Unicycle < DynamicalSystem
 
         % Extended Kalman Filter (EKF) step
         function x_hat = EKF_step(obj, x_hat, u, y)
+            % EKF_step
+            %   Estimates the state of the unicycle model using the Extended Kalman Filter (EKF)
+            %   given a past state estimate, input, and output measurements
+            %
+            % Syntax
+            %   x_hat = obj.EKF_step(x_hat, u, y)
+            %
+            % Input Arguments
+            %   x_hat - State estimate
+            %       real vector
+            %   u - Input vector
+            %       real vector
+            %   y - Output vector
+            %       real vector
+            %
+            % Output Arguments
+            %   x_hat - Updated state estimate
+            %       real vector
 
             % Prediction step
 

@@ -1,8 +1,10 @@
 classdef Helicopter < DynamicalSystem
     properties
+
+        % Model parameters
         n = 8;
         m = 4;
-        p = 8;
+        p = 4;
         Ts;
         bx;
         by;
@@ -15,6 +17,8 @@ classdef Helicopter < DynamicalSystem
         % x_ref = 0.0;
         % y_ref = 0.0;
         g = 9.81;
+
+        % Constraints
         min_xi;
         max_xi;
         min_yi;
@@ -47,6 +51,8 @@ classdef Helicopter < DynamicalSystem
         f_x;
         eps_u;
         f_u;
+
+        % Symbolic properties
         sym_bx;
         sym_by;
         sym_bz;
@@ -60,13 +66,20 @@ classdef Helicopter < DynamicalSystem
         sym_x;
         sym_u;
         sym_f;
-        sym_A;
-        sym_B;
+        sym_g;
+        sym_A;      % symbolic state matrix         (n x n)
+        sym_B;      % symbolic input matrix         (n x m)
+        sym_C;      % symbolic output matrix        (p x n)
+
+        % EKF-related properties
+        P           % State covariance matrix       (n x n)
+        Q_tilde     % Process noise covariance      (n x n)
+        R_tilde     % Measurement noise covariance  (p x p)
     end
 
    methods
         % Constructor to initialize the unicycle parameters and state
-        function obj = Helicopter(parameters, Ts, x_constraints, u_constraints)
+        function obj = Helicopter(parameters, Ts, x_constraints, u_constraints, P0, Q_tilde, R_tilde)
 
             % Check that parameters contains exactly 8 elements
             if length(parameters) ~= 8
@@ -178,8 +191,15 @@ classdef Helicopter < DynamicalSystem
             % dyintdt = sym_ki * (sym_yi - sym_y_ref);
 
             obj.sym_f = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt]; %dxintdt; dyintdt];
+            obj.sym_g = [sym_xi; sym_yi; sym_zi; sym_psi];
             obj.sym_A = jacobian(obj.sym_f, obj.sym_x);
             obj.sym_B = jacobian(obj.sym_f, obj.sym_u);
+            obj.sym_C = jacobian(obj.sym_g, obj.sym_x);
+
+            % Initialize EKF properties
+            obj.P = P0;
+            obj.Q_tilde = Q_tilde;
+            obj.R_tilde = R_tilde;
         end
 
         % State transition function: non-linear continuous dynamics
@@ -249,6 +269,27 @@ classdef Helicopter < DynamicalSystem
 
             % Wrap the angles to [0, 2*pi]
             x_final(7) = wrapTo2Pi(x_final(7));
+        end
+
+        % Output transformation function
+        function y = output(obj, x, u)
+            % output
+            %   Output transformation function for the Helicopter model
+            %
+            % Syntax
+            %   y = obj.output(x, u)
+            %
+            % Input Arguments
+            %   x - State vector
+            %       real vector
+            %   u - Input vector
+            %       real vector
+            %
+            % Output Arguments
+            %   y - Output vector
+            %       real vector
+
+            y = [x(1); x(2); x(3); x(7)];
         end
         
         % Linearization function
@@ -326,23 +367,65 @@ classdef Helicopter < DynamicalSystem
             x_ref_fixed(idx:step:end) = x(idx:step:end) - delta_psi;
         end
 
-        % % Update reference values function
-        % function update_references(obj, x_ref, y_ref)
-        %     % update_references
-        %     %   Update the reference values for the x and y positions
-        %     %
-        %     % Syntax
-        %     %   obj.update_references(x_ref, y_ref)
-        %     %
-        %     % Input Arguments
-        %     %   x_ref - Reference x position
-        %     %       real scalar
-        %     %   y_ref - Reference y position
-        %     %       real scalar
+        % Extended Kalman Filter (EKF) step
+        function x_hat = EKF_step(obj, x_hat, u, y)
+            % EKF_step
+            %   Estimates the state of the Helicopter model using the Extended Kalman Filter (EKF)
+            %   given a past state estimate, input, and output measurements
+            %
+            % Syntax
+            %   x_hat = obj.EKF_step(x_hat, u, y)
+            %
+            % Input Arguments
+            %   x_hat - State estimate
+            %       real vector
+            %   u - Input vector
+            %       real vector
+            %   y - Output vector
+            %       real vector
+            %
+            % Output Arguments
+            %   x_hat - Updated state estimate
+            %       real vector
 
-        %     obj.x_ref = x_ref;
-        %     obj.y_ref = y_ref;
-        % end
+            % Combine all symbolic variables and their corresponding values
+            sym_vars = [
+                obj.sym_x; obj.sym_u; 
+                obj.sym_bx; obj.sym_by; obj.sym_bz; obj.sym_bpsi; 
+                obj.sym_kx; obj.sym_ky; obj.sym_kpsi; obj.sym_ki;
+            ];
+            values = [
+                x_hat; u;
+                obj.bx; obj.by; obj.bz; obj.bpsi; 
+                obj.kx; obj.ky; obj.kpsi; obj.ki;
+            ];
+
+            % Prediction step
+
+            % State transition matrix
+            A = double(subs(obj.sym_A, sym_vars, values));
+
+            % Predicted state estimate
+            x_hat = obj.simulate(x_hat, u, obj.Ts);
+
+            % Predicted covariance estimate
+            P = A * obj.P * A' + obj.Q_tilde;
+
+            % Update step
+
+            % Output transformation matrix
+            C = double(subs(obj.sym_C, sym_vars, values));
+
+            % Kalman gain
+            K = P * C' / (C * P * C' + obj.R_tilde);
+
+            % Updated state estimate
+            x_hat = x_hat + K * (y - obj.output(x_hat, u));
+
+            % Updated covariance estimate
+            obj.P = (eye(size(P)) - K * C) * P;
+            
+        end
 
     end
 end
