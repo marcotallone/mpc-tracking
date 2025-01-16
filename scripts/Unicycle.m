@@ -236,6 +236,25 @@ classdef Unicycle < DynamicalSystem
             x_final = (x(end, :))';
             x_final(3) = wrapTo2Pi(x_final(3));
         end
+
+        % Output transformation function
+        function y = output(obj, x, u)
+            % output
+            %   Output transformation function for the unicycle model
+            %
+            % Syntax
+            %   y = obj.output(x)
+            %
+            % Input Arguments
+            %   x - State vector
+            %       real vector
+            %
+            % Output Arguments
+            %   y - Output vector
+            %       real vector
+
+            y = [x(1); x(2)];
+        end
         
         % Linearization function
         function [A_lin, B_lin] = linearize(obj, x_bar, u_bar)
@@ -287,25 +306,6 @@ classdef Unicycle < DynamicalSystem
             % Fix the angular components w.r.t. current/predicted states
             x_ref_fixed = x_ref;
             x_ref_fixed(3:3:end) = x(3:3:end) - delta_theta;
-        end
-
-        % Output transformation function
-        function y = output(obj, x, u)
-            % output
-            %   Output transformation function for the unicycle model
-            %
-            % Syntax
-            %   y = obj.output(x)
-            %
-            % Input Arguments
-            %   x - State vector
-            %       real vector
-            %
-            % Output Arguments
-            %   y - Output vector
-            %       real vector
-
-            y = [x(1); x(2)];
         end
 
         % Extended Kalman Filter (EKF) step

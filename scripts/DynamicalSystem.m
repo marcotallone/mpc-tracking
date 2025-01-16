@@ -24,6 +24,7 @@ classdef (Abstract) DynamicalSystem < handle
     methods (Abstract)
         dxdt = dynamics(obj, t, x, u)
         x_final = simulate(obj, x0, u, T)
+        y = output(obj, x, u)
         [A_lin, B_lin] = linearize(obj, x_bar, u_bar)
         x_ref_fixed = fix_angles(obj, x, x_ref)
     end
