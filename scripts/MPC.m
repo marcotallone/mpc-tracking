@@ -604,6 +604,7 @@ classdef MPC < handle
 
 			[ZMPC, ~, EXITFLAG] = quadprog((H+H')/2, f, EPS, F, EPS_eq, F_eq, [], [], [], obj.options);
 			if EXITFLAG == -2
+				disp("Iteration: " + string(k));
 				disp("Size of H:"); disp(size(H));
 				disp("Size of f:"); disp(size(f));
 				disp("Size of EPS:"); disp(size(EPS));

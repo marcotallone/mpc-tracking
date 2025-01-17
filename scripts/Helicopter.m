@@ -14,9 +14,11 @@ classdef Helicopter < DynamicalSystem
         ky;
         kpsi;
         ki;
-        % x_ref = 0.0;
-        % y_ref = 0.0;
         g = 9.81;
+
+        % Reference trajectory
+        x_ref = [];
+        u_ref = [];
 
         % Constraints
         min_xi;
@@ -35,10 +37,6 @@ classdef Helicopter < DynamicalSystem
         max_psi;
         min_vpsi;
         max_vpsi;
-        % min_xint;
-        % max_xint;
-        % min_yint;
-        % max_yint;
         min_ux;
         max_ux;
         min_uy;
@@ -61,8 +59,6 @@ classdef Helicopter < DynamicalSystem
         sym_ky;
         sym_kpsi;
         sym_ki;
-        % sym_x_ref;
-        % sym_y_ref;
         sym_x;
         sym_u;
         sym_f;
@@ -112,10 +108,6 @@ classdef Helicopter < DynamicalSystem
             obj.max_psi = x_constraints(7, 2);
             obj.min_vpsi = x_constraints(8, 1);
             obj.max_vpsi = x_constraints(8, 2);
-            % obj.min_xint = x_constraints(9, 1);
-            % obj.max_xint = x_constraints(9, 2);
-            % obj.min_yint = x_constraints(10, 1);
-            % obj.max_yint = x_constraints(10, 2);
             obj.min_ux = u_constraints(1, 1);
             obj.max_ux = u_constraints(1, 2);
             obj.min_uy = u_constraints(2, 1);
@@ -143,10 +135,6 @@ classdef Helicopter < DynamicalSystem
                 -obj.min_psi;
                 +obj.max_vpsi;
                 -obj.min_vpsi;
-                % +obj.max_xint;
-                % -obj.min_xint;
-                % +obj.max_yint;
-                % -obj.min_yint;               
             ];
             obj.eps_u = kron(eye(obj.m), [1; -1]);
             obj.f_u = [
@@ -161,10 +149,9 @@ classdef Helicopter < DynamicalSystem
             ];
 
             % Initialize symbolic properties
-            syms sym_xi sym_yi sym_zi sym_vxb sym_vyb sym_vzb sym_psi sym_vpsi real %sym_xint sym_yint real
+            syms sym_xi sym_yi sym_zi sym_vxb sym_vyb sym_vzb sym_psi sym_vpsi real
             syms sym_ux sym_uy sym_uz sym_upsi
             syms sym_bx sym_by sym_bz sym_bpsi sym_kx sym_ky sym_kpsi sym_ki
-            % syms sym_x_ref sym_y_ref
             
             obj.sym_bx = sym_bx;
             obj.sym_by = sym_by;
@@ -174,9 +161,7 @@ classdef Helicopter < DynamicalSystem
             obj.sym_ky = sym_ky;
             obj.sym_kpsi = sym_kpsi;
             obj.sym_ki = sym_ki;
-            % obj.sym_x_ref = sym_x_ref;
-            % obj.sym_y_ref = sym_y_ref;
-            obj.sym_x = [sym_xi; sym_yi; sym_zi; sym_vxb; sym_vyb; sym_vzb; sym_psi; sym_vpsi]; % sym_xint; sym_yint];
+            obj.sym_x = [sym_xi; sym_yi; sym_zi; sym_vxb; sym_vyb; sym_vzb; sym_psi; sym_vpsi];
             obj.sym_u = [sym_ux; sym_uy; sym_uz; sym_upsi];
 
             dxidt = cos(sym_psi) * sym_vxb - sin(sym_psi) * sym_vyb;
@@ -187,10 +172,8 @@ classdef Helicopter < DynamicalSystem
             dvzbd = sym_bz * sym_uz - obj.g;
             dpsidt = sym_vpsi;
             dvpsidt = sym_bpsi * sym_upsi + sym_kpsi * sym_vpsi;
-            % dxintdt = sym_ki * (sym_xi - sym_x_ref);
-            % dyintdt = sym_ki * (sym_yi - sym_y_ref);
 
-            obj.sym_f = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt]; %dxintdt; dyintdt];
+            obj.sym_f = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt];
             obj.sym_g = [sym_xi; sym_yi; sym_zi; sym_psi];
             obj.sym_A = jacobian(obj.sym_f, obj.sym_x);
             obj.sym_B = jacobian(obj.sym_f, obj.sym_u);
@@ -234,10 +217,8 @@ classdef Helicopter < DynamicalSystem
             dvzbd = obj.bz * u(3) - obj.g;
             dpsidt = x(8);
             dvpsidt = obj.bpsi * u(4) + obj.kpsi * x(8);
-            % dxintdt = obj.ki * (x(1) - obj.x_ref);
-            % dyintdt = obj.ki * (x(2) - obj.y_ref);
 
-            dxdt = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt]; %dxintdt; dyintdt];
+            dxdt = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt];
         end
 
         % Simulation function
@@ -317,13 +298,11 @@ classdef Helicopter < DynamicalSystem
                 obj.sym_x; obj.sym_u; 
                 obj.sym_bx; obj.sym_by; obj.sym_bz; obj.sym_bpsi; 
                 obj.sym_kx; obj.sym_ky; obj.sym_kpsi; obj.sym_ki;
-                % obj.sym_x_ref; obj.sym_y_ref
             ];
             values = [
                 x_bar; u_bar; 
                 obj.bx; obj.by; obj.bz; obj.bpsi; 
                 obj.kx; obj.ky; obj.kpsi; obj.ki;
-                % obj.x_ref; obj.y_ref
             ];
 
             % Ensure the sizes match
@@ -358,12 +337,10 @@ classdef Helicopter < DynamicalSystem
             step = obj.n;
 
             % Compute the angle between the current and reference states
-            % delta_psi = atan2(sin(x(7:8:end) - x_ref(7:8:end)), cos(x(7:8:end) - x_ref(7:8:end)));
             delta_psi = atan2(sin(x(idx:step:end) - x_ref(idx:step:end)), cos(x(idx:step:end) - x_ref(idx:step:end)));
 
             % Fix the angular components w.r.t. current/predicted states
             x_ref_fixed = x_ref;
-            % x_ref_fixed(7:8:end) = x(7:8:end) - delta_psi;
             x_ref_fixed(idx:step:end) = x(idx:step:end) - delta_psi;
         end
 
@@ -427,5 +404,172 @@ classdef Helicopter < DynamicalSystem
             
         end
 
+        % Trajectory generation function
+        function [x_ref, u_ref] = generate_trajectory(obj, N_guide, shape, extra_params)
+
+            % Circular trajectory
+            if nargin < 4 && strcmp(shape, 'circle')
+                error('Please provide the radius of the circle trajectory.');
+            elseif nargin == 4 && strcmp(shape, 'circle')
+
+                % Set radius
+                assert(isscalar(extra_params), 'The extra parameter radius must be a scalar value.');
+                radius = extra_params;
+
+                % Generation parameters
+                N_intervals = N_guide - 1;
+                Tend = N_intervals * obj.Ts;
+                theta = 0;
+                delta = 2 * pi / N_intervals;
+                m_theta = delta / obj.Ts; % angulat coefficient of theta(t) = m_theta * t
+
+                % Guide points and derivatives
+                T_guide = linspace(0, Tend, N_guide);
+                Z_guide = zeros(N_guide, obj.p);
+                dZ_guide = zeros(N_guide, obj.p);
+                ddZ_guide = zeros(N_guide, obj.p);
+                for i = 1:N_guide
+                    Z_guide(i, :) = [radius * cos(theta), radius * sin(theta), 0, 0.5 * pi + theta];
+                    dZ_guide(i, :) = [-radius * m_theta * sin(theta), radius * m_theta * cos(theta), 0, m_theta];
+                    ddZ_guide(i, :) = [-radius * (m_theta^2) * cos(theta), -radius * (m_theta^2) * sin(theta), 0, 0];
+                    theta = theta + delta;
+                end
+
+                % Analytical definition
+                syms t real;
+                ftheta = @(t) m_theta * t;
+                z = [radius * cos(ftheta(t)), radius * sin(ftheta(t)), 0, 0.5 * pi + ftheta(t)];
+                dz = diff(z, t);
+                ddz = diff(dz, t);
+
+                % Analytical definition of remaining states and inputs
+                dxb = cos(z(4)) * dz(1) + sin(z(4)) * dz(2);
+                dyb = -sin(z(4)) * dz(1) + cos(z(4)) * dz(2);
+                dzb = dz(3);
+                dpsi = dz(4);
+                ux = (cos(z(4)) * (ddz(1) - obj.kx * dz(1)) + sin(z(4)) * (ddz(2) - obj.kx * dz(2)) / obj.bx);
+                uy = (cos(z(4)) * (ddz(2) - obj.ky * dz(2)) + sin(z(4)) * (-ddz(1) + obj.ky * dz(1)) / obj.by);
+                uz = (ddz(3) + obj.g) / obj.bz;
+                upsi = (ddz(4) - obj.kpsi * dz(4)) / obj.bpsi;
+
+                x = [z(1), z(2), z(3), dxb, dyb, dzb, z(4), dpsi];
+                u = [ux, uy, uz, upsi];
+
+                % Reference trajectory
+                obj.x_ref = [];
+                obj.u_ref = [];
+                for i = 1:N_guide - 1
+                    x_t = double(subs(x, t, T_guide(i)));
+                    u_t = double(subs(u, t, T_guide(i)));
+
+                    obj.x_ref = [obj.x_ref; x_t];
+                    obj.u_ref = [obj.u_ref; u_t];
+                end
+            end
+
+            % Murray trajectory generation method
+            if nargin < 4 && strcmp(shape, 'arbitrary')
+                error('Please provide a cell array containing {N_points_filling, Z_guide} as extra parameters.');
+            elseif nargin == 4 && strcmp(shape, 'arbitrary')
+
+                assert(iscell(extra_params), 'The extra parameters must be a cell array containing {N_points_filling, Z_guide}');
+
+                % Extract the extra parameters
+                N_points_filling = extra_params{1};
+                Z_guide = extra_params{2};
+
+                assert(isscalar(N_points_filling), 'The number of points to fill must be a scalar value.');
+                assert(size(Z_guide, 1) == N_guide, 'The guide points matrix must have N_guide rows: as many as the intervals/guide points.');
+                assert(size(Z_guide, 2) == obj.p, 'The guide points matrix must have p columns: as many as the flat outputs.');
+
+                % Generation parameters
+                N_intervals = N_guide - 1;
+                Tend = N_intervals * N_points_filling * obj.Ts;
+                T_guide = linspace(0, Tend, N_guide);
+                N_basis = 2;
+                order = 0;
+
+                % Basis functions
+                syms x
+                basis = sym('x', [1 N_basis]);
+                for k = 1:N_basis
+                    basis(k) = x^(k-1);
+                end
+
+                % Trajectory filling
+                obj.x_ref = [];
+                obj.u_ref = [];
+                for i = 1:length(T_guide) - 1
+
+                    % Time interval
+                    t0 = T_guide(i);
+                    t1 = T_guide(i+1);
+
+                    % Matrix M
+                    m0 = obj.m_matrix(t0, basis, order);
+                    m1 = obj.m_matrix(t1, basis, 0);
+                    M0 = kron(eye(obj.p), m0);
+                    M1 = kron(eye(obj.p), m1);
+                    M = [M0; M1];
+
+                    % Guide points in the interval
+                    z_bar = [
+                        Z_guide(i, 1:obj.p)';
+                        Z_guide(i+1, 1:obj.p)';
+                    ];
+
+                    % Check that M is full column rank
+                    if rank(M) < size(M, 2)
+                        disp('Matrix M is not full column rank');
+                        return;
+                    end
+
+                    % Solve the system and reshape
+                    alpha = M\z_bar;
+                    alpha = reshape(alpha, [], obj.p)';
+
+                    % Reference function z(t) and its derivatives
+                    z = alpha*basis.';
+                    dz = diff(z, x);
+                    ddz = diff(dz, x);
+
+                    % Generate missing points
+                    N_filling = ceil((t1 - t0)/obj.Ts) + 1;
+                    T_filling = linspace(t0, t1, N_filling);
+                    for j = 1:length(T_filling) - 1
+
+                        % Evaluate z(t) and derivatives
+                        z_t = double(subs(z, x, T_filling(j)))';
+                        z_t(obj.p) = wrapTo2Pi(z_t(obj.p)); % wrap the angle state
+                        dz_t = double(subs(dz, x, T_filling(j)))';
+                        ddz_t = double(subs(ddz, x, T_filling(j)))';
+
+                        % Compute remaining states and inputs
+                        dxb = cos(z_t(4))*dz_t(1) + sin(z_t(4))*dz_t(2);
+                        dyb = -sin(z_t(4))*dz_t(1) + cos(z_t(4))*dz_t(2);
+                        dzb = dz_t(3);
+                        dpsi = dz_t(4);
+
+                        x_t = [z_t(1), z_t(2), z_t(3), dxb, dyb, dzb, z_t(4), dpsi]; %, dxint, dyint];
+
+                        ux = (cos(z_t(4))*(ddz_t(1) - obj.kx*dz_t(1)) + sin(z_t(4))*(ddz_t(2) - obj.kx*dz_t(2))/obj.bx);
+                        uy = (cos(z_t(4))*(ddz_t(2) - obj.ky*dz_t(2)) + sin(z_t(4))*(-ddz_t(1) + obj.ky*dz_t(1))/obj.by);
+                        uz = (ddz_t(3) + obj.g)/obj.bz;
+                        upsi = (ddz_t(4) - obj.kpsi*dz_t(4))/obj.bpsi;
+
+                        u_t = [ux, uy, uz, upsi];
+
+                        % Store the reference flat-output, states and inputs
+                        obj.x_ref = [obj.x_ref; x_t];
+                        obj.u_ref = [obj.u_ref; u_t];
+                    end
+                end
+            end
+            
+
+            % Return reference states and inputs
+            x_ref = obj.x_ref;
+            u_ref = obj.u_ref;
+        end
     end
 end

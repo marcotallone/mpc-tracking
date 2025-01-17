@@ -60,6 +60,19 @@ classdef (Abstract) DynamicalSystem < handle
             % A_discrete = discrete_sys.A;
             % B_discrete = discrete_sys.B;
         end
+
+        % m-matrix m(t) function for Murray trajectory generation
+        function m_matrix = m_matrix(obj, t, basis, order)
+            syms x
+            m_matrix = zeros(order+1, length(basis));
+            for i = 0:order
+                for j = 1:length(basis)
+                    derivative = diff(basis(j), x, i);
+                    m_matrix(i+1, j) = subs(derivative, x, t);
+                end
+            end
+        end
+
     end 
 
 end
