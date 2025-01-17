@@ -467,6 +467,8 @@ classdef Helicopter < DynamicalSystem
                 end
             end
 
+            % Infinity symbol
+
             % Murray trajectory generation method
             if nargin < 4 && strcmp(shape, 'arbitrary')
                 error('Please provide a cell array containing {N_points_filling, Z_guide} as extra parameters.');
