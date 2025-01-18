@@ -25,7 +25,7 @@ u_constraints = [
     -1, 1;
     -1, 1;
     -1, 1;
-     0, 1;
+    -1, 1;
 ];
 
 states = 8;
@@ -40,38 +40,45 @@ model = Helicopter(parameters, Ts, x_constraints, u_constraints, P0, Q_tilde, R_
 % Reference Trajectory Generation ──────────────────────────────────────────────
 
 
-% % Circle trajectory
+% Circle trajectory
+N_intervals = 96;
+N_guide = N_intervals + 1;
+Tend = N_intervals * Ts;
+radius = 0.5;
+shape = "circle";
+[x_ref, u_ref] = model.generate_trajectory(N_guide, shape, radius);
+
+% % Leminscate trajectory
 % N_intervals = 96;
 % N_guide = N_intervals + 1;
 % Tend = N_intervals * Ts;
+% a = 2;
+% shape = "leminscate";
+% [x_ref, u_ref] = model.generate_trajectory(N_guide, shape, a);
+
+% % Arbitrary trajectory
+% N_intervals = 24;
+% N_guide = N_intervals + 1;
+% N_points_filling = 5; % Number of points between guide points
+% Tend = N_intervals * N_points_filling * Ts;
+% T_guide = linspace(0, Tend, N_guide);
+% Z_guide = zeros(N_guide, outputs);
+% theta = 0;
+% delta = 2*pi/N_intervals;
 % radius = 0.5;
-% shape = "circle";
-% [x_ref, u_ref] = model.generate_trajectory(N_guide, shape, radius);
+% for i = 1:N_guide
+%     Z_guide(i, :) = [radius*cos(theta), radius*sin(theta), 0, 0.5*pi + theta];
+%     theta = theta + delta;
+% end 
+% shape = "arbitrary";
+% [x_ref, u_ref] = model.generate_trajectory(N_guide, shape, {N_points_filling, Z_guide});
 
 
-% Arbitrary trajectory
-N_intervals = 24;
-N_guide = N_intervals + 1;
-N_points_filling = 5; % Number of points between guide points
-Tend = N_intervals * N_points_filling * Ts;
-T_guide = linspace(0, Tend, N_guide);
-Z_guide = zeros(N_guide, outputs);
-theta = 0;
-delta = 2*pi/N_intervals;
-radius = 0.5;
-for i = 1:N_guide
-    Z_guide(i, :) = [radius*cos(theta), radius*sin(theta), 0, 0.5*pi + theta];
-    theta = theta + delta;
-end 
-shape = "arbitrary";
-[x_ref, u_ref] = model.generate_trajectory(N_guide, shape, {N_points_filling, Z_guide});
-
-
-% % Multiply periodic  references for multiple laps
-% n_laps = 1;
-% x_ref = repmat(x_ref, n_laps, 1);
-% u_ref = repmat(u_ref, n_laps, 1);
-% Tend = Tend*n_laps;
+% Multiply periodic  references for multiple laps
+n_laps = 2;
+x_ref = repmat(x_ref, n_laps, 1);
+u_ref = repmat(u_ref, n_laps, 1);
+Tend = Tend*n_laps;
 
 
 % % Guide points for reference trajectory ────────────────────────────────────────
@@ -306,6 +313,9 @@ shape = "arbitrary";
 
 % MPC parameters
 x0 = zeros(model.n,1);
+x0(1) = 3;
+x0(2) = -0.25;
+x0(7) = pi/2;
 N  = 18;
 Q = diag([50, 50, 5, 10, 3, 3, 1, 2]);
 R = diag([2, 2, 2, 2]);
@@ -322,7 +332,7 @@ mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, d
 
 % Plot
 figure(1);
-arrow_length = 0.01;
+arrow_length = 0.05;
 
 % Guide points
 guide_points = scatter(x_ref(:, 1), x_ref(:, 2), 15, 'filled', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', '#808080');

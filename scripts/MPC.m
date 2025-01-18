@@ -693,6 +693,7 @@ classdef MPC < handle
 
 				% Display the current iteration results
 				fprintf("Iteration: %d/%d, ||x - x_ref|| = %f, ||u - u_ref|| = %f\n", k, obj.Nsteps, x_distance, u_distance);
+				% fprintf("                  x(7) = %f, x_ref(7) = %f\n", x_last(7), obj.x_ref((k) * n + 7));
 
 			end
 

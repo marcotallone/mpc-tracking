@@ -324,9 +324,9 @@ classdef Helicopter < DynamicalSystem
             %   x_ref_fixed = obj.fix_angles(x, x_ref)
             %
             % Input Arguments
-            %   x - Current state
+            %   x - Current state (augmented MPC vector form)
             %       real vector
-            %   x_ref - Reference state
+            %   x_ref - Reference state (augmented MPC vector form)
             %       real vector
             %
             % Output Arguments
@@ -406,6 +406,17 @@ classdef Helicopter < DynamicalSystem
 
         % Trajectory generation function
         function [x_ref, u_ref] = generate_trajectory(obj, N_guide, shape, extra_params)
+            %//TODO: make this model also return Tend which is needed for MPC
+
+            % Common generation parameters
+            N_intervals = N_guide - 1;
+            delta = 2 * pi / N_intervals;
+            m_theta = delta / obj.Ts; % angulat coefficient of theta(t) = m_theta * t
+
+            % Analytical parametrization
+            syms t real;
+            f_theta = @(t) m_theta * t;
+            sym_theta = m_theta*t;
 
             % Circular trajectory
             if nargin < 4 && strcmp(shape, 'circle')
@@ -416,35 +427,18 @@ classdef Helicopter < DynamicalSystem
                 assert(isscalar(extra_params), 'The extra parameter radius must be a scalar value.');
                 radius = extra_params;
 
-                % Generation parameters
-                N_intervals = N_guide - 1;
+                % Simulation time and guide time steps
                 Tend = N_intervals * obj.Ts;
-                theta = 0;
-                delta = 2 * pi / N_intervals;
-                m_theta = delta / obj.Ts; % angulat coefficient of theta(t) = m_theta * t
-
-                % Guide points and derivatives
                 T_guide = linspace(0, Tend, N_guide);
-                Z_guide = zeros(N_guide, obj.p);
-                dZ_guide = zeros(N_guide, obj.p);
-                ddZ_guide = zeros(N_guide, obj.p);
-                for i = 1:N_guide
-                    Z_guide(i, :) = [radius * cos(theta), radius * sin(theta), 0, 0.5 * pi + theta];
-                    dZ_guide(i, :) = [-radius * m_theta * sin(theta), radius * m_theta * cos(theta), 0, m_theta];
-                    ddZ_guide(i, :) = [-radius * (m_theta^2) * cos(theta), -radius * (m_theta^2) * sin(theta), 0, 0];
-                    theta = theta + delta;
-                end
 
                 % Analytical definition
-                syms t real;
-                ftheta = @(t) m_theta * t;
-                z = [radius * cos(ftheta(t)), radius * sin(ftheta(t)), 0, 0.5 * pi + ftheta(t)];
+                z = [radius * cos(f_theta(t)), radius * sin(f_theta(t)), 0, 0.5 * pi + f_theta(t)];
                 dz = diff(z, t);
                 ddz = diff(dz, t);
 
                 % Analytical definition of remaining states and inputs
                 dxb = cos(z(4)) * dz(1) + sin(z(4)) * dz(2);
-                dyb = -sin(z(4)) * dz(1) + cos(z(4)) * dz(2);
+                dyb = +sin(z(4)) * dz(1) + cos(z(4)) * dz(2);
                 dzb = dz(3);
                 dpsi = dz(4);
                 ux = (cos(z(4)) * (ddz(1) - obj.kx * dz(1)) + sin(z(4)) * (ddz(2) - obj.kx * dz(2)) / obj.bx);
@@ -467,9 +461,56 @@ classdef Helicopter < DynamicalSystem
                 end
             end
 
-            % Infinity symbol
+            % Leminscate trajectory
+            if nargin < 4 && strcmp(shape, 'leminscate')
+                error('Please provide the a parameter of the leminscate trajectory');
+            elseif nargin == 4 && strcmp(shape, 'leminscate')
 
-            % Murray trajectory generation method
+                % Set a parameter
+                assert(isscalar(extra_params), 'The extra parameter a must be a scalar value.');
+                a = extra_params;
+
+                % Simulation time and guide time steps
+                Tend = N_intervals * obj.Ts;
+                T_guide = linspace(0, Tend, N_guide);
+
+                % Analytical definition
+                lemin_x = (a*sqrt(2)*cos(sym_theta))/(sin(sym_theta)^2 + 1);
+                lemin_y = (a*sqrt(2)*cos(sym_theta)*sin(sym_theta))/(sin(sym_theta)^2 + 1);
+                z = [lemin_x, lemin_y, 0, atan2(diff(lemin_y, t)/diff(sym_theta, t), diff(lemin_x, t)/diff(sym_theta, t))]; 
+                dz = diff(z, t);
+                ddz = diff(dz, t);
+
+                % Analytical definition of remaining states and inputs
+                dxb = cos(z(4)) * dz(1) + sin(z(4)) * dz(2);
+                dyb = -sin(z(4)) * dz(1) + cos(z(4)) * dz(2);
+                dzb = dz(3);
+                dpsi = dz(4);
+                ux = (cos(z(4)) * (ddz(1) - obj.kx * dz(1)) + sin(z(4)) * (ddz(2) - obj.kx * dz(2)) / obj.bx);
+                uy = (cos(z(4)) * (ddz(2) - obj.ky * dz(2)) + sin(z(4)) * (-ddz(1) + obj.ky * dz(1)) / obj.by);
+                uz = (ddz(3) + obj.g) / obj.bz;
+                upsi = (ddz(4) - obj.kpsi * dz(4)) / obj.bpsi;
+
+                x = [z(1), z(2), z(3), dxb, dyb, dzb, z(4), dpsi];
+                u = [ux, uy, uz, upsi];
+
+                % Reference trajectory
+                obj.x_ref = [];
+                obj.u_ref = [];
+                for i = 1:N_guide - 1
+                    x_t = double(subs(x, t, 1e-6+T_guide(i)));
+                    u_t = double(subs(u, t, 1e-6+T_guide(i)));
+
+                    x_t(7) = wrapTo2Pi(x_t(7)); % wrap the angle stat %, dxint, dyint];e
+
+                    disp(x_t);
+
+                    obj.x_ref = [obj.x_ref; x_t];
+                    obj.u_ref = [obj.u_ref; u_t];
+                end
+            end
+
+            % Arbitrary trajectory with Murray generation method
             if nargin < 4 && strcmp(shape, 'arbitrary')
                 error('Please provide a cell array containing {N_points_filling, Z_guide} as extra parameters.');
             elseif nargin == 4 && strcmp(shape, 'arbitrary')
@@ -552,7 +593,7 @@ classdef Helicopter < DynamicalSystem
                         dzb = dz_t(3);
                         dpsi = dz_t(4);
 
-                        x_t = [z_t(1), z_t(2), z_t(3), dxb, dyb, dzb, z_t(4), dpsi]; %, dxint, dyint];
+                        x_t = [z_t(1), z_t(2), z_t(3), dxb, dyb, dzb, wrapTo2Pi(z_t(4)), dpsi];
 
                         ux = (cos(z_t(4))*(ddz_t(1) - obj.kx*dz_t(1)) + sin(z_t(4))*(ddz_t(2) - obj.kx*dz_t(2))/obj.bx);
                         uy = (cos(z_t(4))*(ddz_t(2) - obj.ky*dz_t(2)) + sin(z_t(4))*(-ddz_t(1) + obj.ky*dz_t(1))/obj.by);
@@ -567,7 +608,6 @@ classdef Helicopter < DynamicalSystem
                     end
                 end
             end
-            
 
             % Return reference states and inputs
             x_ref = obj.x_ref;
