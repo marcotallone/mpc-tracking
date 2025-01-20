@@ -344,14 +344,14 @@ classdef Helicopter < DynamicalSystem
             x_ref_fixed(idx:step:end) = x(idx:step:end) - delta_psi;
         end
 
-        % Extended Kalman Filter (EKF) step
-        function x_hat = EKF_step(obj, x_hat, u, y)
-            % EKF_step
+        % Extended Kalman Filter (EKF) state estimation
+        function x_hat = EKF_estimate(obj, x_hat, u, y)
+            % EKF_estimate
             %   Estimates the state of the Helicopter model using the Extended Kalman Filter (EKF)
             %   given a past state estimate, input, and output measurements
             %
             % Syntax
-            %   x_hat = obj.EKF_step(x_hat, u, y)
+            %   x_hat = obj.EKF_estimate(x_hat, u, y)
             %
             % Input Arguments
             %   x_hat - State estimate
@@ -404,18 +404,42 @@ classdef Helicopter < DynamicalSystem
             
         end
 
+        % % States and inputs from flat outputs
+        % function [x, u] = from_flat(obj, z)
+
+        %     syms t real;
+
+        %     % Check that z has 4 flat outputs
+        %     assert(length(z) == 4, 'The flat outputs vector must have 4 elements.');
+        %     dz = diff(z, t);
+        %     ddz = diff(dz, t);
+
+        %     % Analytical definition of remaining states and inputs
+        %     dxb = cos(z(4)) * dz(1) + sin(z(4)) * dz(2);
+        %     dyb = -sin(z(4)) * dz(1) + cos(z(4)) * dz(2);
+        %     dzb = dz(3);
+        %     dpsi = dz(4);
+        %     ux = (cos(z(4)) * (ddz(1) - obj.kx * dz(1)) + sin(z(4)) * (ddz(2) - obj.kx * dz(2)) / obj.bx);
+        %     uy = (cos(z(4)) * (ddz(2) - obj.ky * dz(2)) + sin(z(4)) * (-ddz(1) + obj.ky * dz(1)) / obj.by);
+        %     uz = (ddz(3) + obj.g) / obj.bz;
+        %     upsi = (ddz(4) - obj.kpsi * dz(4)) / obj.bpsi;
+
+        %     x = [z(1), z(2), z(3), dxb, dyb, dzb, z(4), dpsi];
+        %     u = [ux, uy, uz, upsi];
+            
+        % end
+
         % Trajectory generation function
         function [x_ref, u_ref, Tend] = generate_trajectory(obj, N_guide, shape, extra_params)
-            %//TODO: make this model also return Tend which is needed for MPC
 
             % Common generation parameters
             N_intervals = N_guide - 1;
             delta = 2 * pi / N_intervals;
-            m_theta = delta / obj.Ts; % angulat coefficient of theta(t) = m_theta * t
+            m_theta = delta / obj.Ts; % angular coefficient of theta(t) = m_theta * t
 
             % Analytical parametrization
             syms t real;
-            f_theta = @(t) m_theta * t;
+            % f_theta = @(t) m_theta * t;
             sym_theta = m_theta*t;
 
             % Circular trajectory
@@ -432,7 +456,10 @@ classdef Helicopter < DynamicalSystem
                 T_guide = linspace(0, Tend, N_guide);
 
                 % Analytical definition
-                z = [radius * cos(f_theta(t)), radius * sin(f_theta(t)), 0, 0.5 * pi + f_theta(t)];
+                % z = [radius * cos(f_theta(t)), radius * sin(f_theta(t)), 0, 0.5 * pi + f_theta(t)];
+                circle_x = radius * cos(sym_theta);
+                circle_y = radius * sin(sym_theta);
+                z = [circle_x, circle_y, atan2(diff(circle_y, t), diff(circle_x, t))];
                 dz = diff(z, t);
                 ddz = diff(dz, t);
 
@@ -479,7 +506,8 @@ classdef Helicopter < DynamicalSystem
                 % Analytical definition
                 lemin_x = (a*sqrt(2)*cos(sym_theta))/(sin(sym_theta)^2 + 1);
                 lemin_y = (a*sqrt(2)*cos(sym_theta)*sin(sym_theta))/(sin(sym_theta)^2 + 1);
-                z = [lemin_x, lemin_y, 0, atan2(diff(lemin_y, t)/diff(sym_theta, t), diff(lemin_x, t)/diff(sym_theta, t))]; 
+                % z = [lemin_x, lemin_y, 0, atan2(diff(lemin_y, t)/diff(sym_theta, t), diff(lemin_x, t)/diff(sym_theta, t))]; 
+                z = [lemin_x, lemin_y, 0, atan2(diff(lemin_y, t), diff(lemin_x, t))]; 
                 dz = diff(z, t);
                 ddz = diff(dz, t);
 
@@ -523,7 +551,6 @@ classdef Helicopter < DynamicalSystem
 
                 % Simulation time and guide time steps
                 Tend = N_intervals * obj.Ts;
-                T_guide = linspace(0, Tend, N_guide);
 
                 % Analytical definition
                 batman_x = (abs(t)/t) * (0.3*abs(t) + 0.2*abs(abs(t)-1) + 2.2*abs(abs(t)-2) ...
@@ -555,9 +582,8 @@ classdef Helicopter < DynamicalSystem
                 x = [z(1), z(2), z(3), dxb, dyb, dzb, z(4), dpsi];
                 u = [ux, uy, uz, upsi];
 
-
                 % Distribute reference points more uniformly
-                N_head = 6; % points for t in [-2,2]
+                N_head = 6;
                 N_left = (N_guide - N_head)/2;
                 N_right = N_left;
     
@@ -571,8 +597,6 @@ classdef Helicopter < DynamicalSystem
                 obj.x_ref = [];
                 obj.u_ref = [];
                 for i = 1:N_guide - 1
-                    % x_t = double(subs(x, t, 1e-6+T_guide(i)));
-                    % u_t = double(subs(u, t, 1e-6+T_guide(i)));
                     x_t = double(subs(x, t, 1e-6+l(i)));
                     u_t = double(subs(u, t, 1e-6+l(i)));
 

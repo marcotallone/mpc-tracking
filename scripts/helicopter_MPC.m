@@ -52,7 +52,7 @@ model = Helicopter(parameters, Ts, x_constraints, u_constraints, P0, Q_tilde, R_
 N_guide = 100;
 a = 0.5;
 shape = "leminscate";
-[x_ref, ~, ~] = model.generate_trajectory(N_guide, shape, a);
+[x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
 
 % Z_guide = [x_ref(:, 1), x_ref(:, 2), x_ref(:, 3), x_ref(:, 7)];
 % [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide-1, "arbitrary", {2, Z_guide});
@@ -81,11 +81,11 @@ shape = "leminscate";
 % [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, {N_points_filling, Z_guide});
 
 
-% % Multiply periodic  references for multiple laps
-% n_laps = 2;
-% x_ref = repmat(x_ref, n_laps, 1);
-% u_ref = repmat(u_ref, n_laps, 1);
-% Tend = Tend*n_laps;
+% Multiply periodic  references for multiple laps
+n_laps = 2;
+x_ref = repmat(x_ref, n_laps, 1);
+u_ref = repmat(u_ref, n_laps, 1);
+Tend = Tend*n_laps;
 
 
 % % Guide points for reference trajectory ────────────────────────────────────────

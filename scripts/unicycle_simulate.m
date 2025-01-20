@@ -22,22 +22,6 @@ P0 = eye(states);                   % Initial state covariance
 
 model = Unicycle(r, L, Ts, x_constraints, u_constraints, P0, Q_tilde, R_tilde);
 
-
-% ------------------------------------------------------------------------- cut
-% Simulation parameters
-% x0 = [0; 0; 7*pi/4;];               % initial state
-% Tend = 90*Ts;                       % simulation time
-% t = 0:Ts:Tend;                      % vector of time steps
-% % Reference trajectory
-% x_ref = zeros(length(t), model.n);
-% u_ref = zeros(length(t), model.m);
-% for i = 1:length(t)
-%     x_ref(i, :) = [cos(t(i)), sin(t(i)), wrapTo2Pi(0.5 * pi + t(i))];
-%     u_ref(i, :) = [(2-L)/(2*r), (2+L)/(2*r)];
-% end
-% ------------------------------------------------------------------------- cut
-
-
 % Reference Trajectory Generation ──────────────────────────────────────────────
 
 % % Circle trajectory
@@ -53,7 +37,7 @@ model = Unicycle(r, L, Ts, x_constraints, u_constraints, P0, Q_tilde, R_tilde);
 % [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
 
 % Batman trajectory
-N_guide = 100;
+N_guide = 200;
 shape = "batman";
 [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape);
 
@@ -80,25 +64,19 @@ shape = "batman";
 % u_ref = repmat(u_ref, n_laps, 1);
 % Tend = Tend*n_laps;
 
+% Simulate the system ──────────────────────────────────────────────────────────
+x0 = x_ref(1, :)';                  % initial state
+Nsteps = length(x_ref);             % number of steps
+x = zeros(Nsteps, states);          % state vector
+x(1, :) = x0';                      % initial state
 
-% MPC ──────────────────────────────────────────────────────────────────────────
-
-% MPC parameters
-% x0 = zeros(model.n,1);            % origin initial state
-x0 = x_ref(1, :)';                  % firts reference initial state
-N  = 5;                             % prediction horizon
-Q  = 1000*eye(model.n);             % state cost
-R  = eye(model.m);                  % input cost
-preview = 1;                        % MPC preview flag
-formulation = 0;                    % MPC formulation flag
-noise = 0;                          % MPC noise flag
-debug = 0;                          % MPC debug flag
-t = 0:Ts:Tend;                      % vector of time steps
-Nsteps = length(t) - (N+1);         % number of MPC optimization steps
-
-% Optimization
-mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
-[x, u] = mpc.optimize();
+for i = 1:Nsteps-1
+    % Control input
+    u = u_ref(i, :)';
+    
+    % Simulate the system
+    x(i+1, :) = model.simulate(x(i, :)', u, Ts);
+end
 
 % Plot
 

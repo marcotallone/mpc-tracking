@@ -80,6 +80,10 @@ classdef Unicycle < DynamicalSystem
         r;          % wheel radius
         L;          % distance between wheels
 
+        % Reference trajectory
+        x_ref = [];
+        u_ref = [];
+
         % Constraints
         min_omega;  % minimum angular velocity
         max_omega;  % maximum angular velocity
@@ -312,14 +316,14 @@ classdef Unicycle < DynamicalSystem
             x_ref_fixed(3:3:end) = x(3:3:end) - delta_theta;
         end
 
-        % Extended Kalman Filter (EKF) step
-        function x_hat = EKF_step(obj, x_hat, u, y)
-            % EKF_step
+        % Extended Kalman Filter (EKF) state estimation
+        function x_hat = EKF_estimate(obj, x_hat, u, y)
+            % EKF_estimate
             %   Estimates the state of the unicycle model using the Extended Kalman Filter (EKF)
             %   given a past state estimate, input, and output measurements
             %
             % Syntax
-            %   x_hat = obj.EKF_step(x_hat, u, y)
+            %   x_hat = obj.EKF_estimate(x_hat, u, y)
             %
             % Input Arguments
             %   x_hat - State estimate
@@ -358,6 +362,285 @@ classdef Unicycle < DynamicalSystem
             % Updated covariance estimate
             obj.P = (eye(size(P)) - K * C) * P;
             
+        end
+
+
+        % Trajectory generation function
+        function [x_ref, u_ref, Tend] = generate_trajectory(obj, N_guide, shape, extra_params)
+
+            % Common generation parameters
+            N_intervals = N_guide - 1;
+            delta = 2 * pi / N_intervals;
+            m_theta = delta / obj.Ts; % angular coefficient of theta(t) = m_theta * t
+
+            % Analytical parametrization
+            syms t real;
+            sym_theta = m_theta*t;
+
+            % Circular trajectory
+            if nargin < 4 && strcmp(shape, 'circle')
+                error('Please provide the radius of the circle trajectory.');
+            elseif nargin == 4 && strcmp(shape, 'circle')
+
+                % Set radius
+                assert(isscalar(extra_params), 'The extra parameter radius must be a scalar value.');
+                radius = extra_params;
+
+                % Simulation time and guide time steps
+                Tend = N_intervals * obj.Ts;
+                T_guide = linspace(0, Tend, N_guide);
+
+                % Analytical definition
+                circle_x = radius * cos(sym_theta);
+                circle_y = radius * sin(sym_theta);
+                z = [circle_x, circle_y, atan2(diff(circle_y, t), diff(circle_x, t))];
+                dz = diff(z, t);
+
+                % Analytical definition of remaining states and inputs
+                omega1 = (2*sqrt(dz(1)^2 + dz(2)^2) - obj.L*dz(3))/(2*obj.r); 
+                omega2 = (2*sqrt(dz(1)^2 + dz(2)^2) + obj.L*dz(3))/(2*obj.r); 
+                
+                x = [z(1), z(2), z(3)];
+                u = [omega1, omega2];
+
+                % Reference trajectory
+                obj.x_ref = [];
+                obj.u_ref = [];
+                for i = 1:N_guide - 1
+                    x_t = double(subs(x, t, 1e-6+T_guide(i)));
+                    u_t = double(subs(u, t, 1e-6+T_guide(i)));
+
+                    x_t(3) = wrapTo2Pi(x_t(3)); % wrap the angle state
+
+                    obj.x_ref = [obj.x_ref; x_t];
+                    obj.u_ref = [obj.u_ref; u_t];
+                end
+            end
+
+            % Leminscate trajectory
+            if nargin < 4 && strcmp(shape, 'leminscate')
+                error('Please provide the a parameter of the leminscate trajectory');
+            elseif nargin == 4 && strcmp(shape, 'leminscate')
+
+                % Set a parameter
+                assert(isscalar(extra_params), 'The extra parameter a must be a scalar value.');
+                a = extra_params;
+
+                % Simulation time and guide time steps
+                Tend = N_intervals * obj.Ts;
+                T_guide = linspace(0, Tend, N_guide);
+
+                % Analytical definition
+                lemin_x = (a*sqrt(2)*cos(sym_theta))/(sin(sym_theta)^2 + 1);
+                lemin_y = (a*sqrt(2)*cos(sym_theta)*sin(sym_theta))/(sin(sym_theta)^2 + 1);
+                % z = [lemin_x, lemin_y, atan2(diff(lemin_y, t)/diff(sym_theta, t), diff(lemin_x, t)/diff(sym_theta, t))]; 
+                z = [lemin_x, lemin_y, atan2(diff(lemin_y, t), diff(lemin_x, t))]; 
+                dz = diff(z, t);
+
+                % Analytical definition of remaining states and inputs
+                omega1 = (2*sqrt(dz(1)^2 + dz(2)^2) - obj.L*dz(3))/(2*obj.r); 
+                omega2 = (2*sqrt(dz(1)^2 + dz(2)^2) + obj.L*dz(3))/(2*obj.r); 
+                
+                x = [z(1), z(2), z(3)];
+                u = [omega1, omega2];
+
+                % Reference trajectory
+                obj.x_ref = [];
+                obj.u_ref = [];
+                for i = 1:N_guide - 1
+                    x_t = double(subs(x, t, 1e-6+T_guide(i)));
+                    % u_t = double(subs(u, t, 1e-6+T_guide(i)));
+
+                    % Compute the average input in [T_guide(i), T_guide(i+1)] between n_samples samples
+                    n_samples = 25;
+                    u_t_average = zeros(1, obj.m);
+                    for j = 1:n_samples
+                        u_t = double(subs(u, t, 1e-6+T_guide(i) + j*(T_guide(i+1) - T_guide(i))/n_samples));
+                        u_t_average = u_t_average + u_t;
+                    end
+                    u_t_average = u_t_average / n_samples;
+
+                    u_t = u_t_average;
+
+                    x_t(3) = wrapTo2Pi(x_t(3)); % wrap the angle state
+
+                    obj.x_ref = [obj.x_ref; x_t];
+                    obj.u_ref = [obj.u_ref; u_t];
+                end
+            end
+
+            % Batman trajectory
+            if nargin < 4 && strcmp(shape, 'batman')
+
+                % Assert that N_guide is at least 10
+                assert(N_guide >= 10, 'The number of guide points must be at least 10 for the Batman trajectory.');
+
+                % If N_guide odd add 1 to make it even
+                if mod(N_guide, 2) == 1
+                    N_guide = N_guide + 1;
+                end
+
+                % Simulation time and guide time steps
+                Tend = N_intervals * obj.Ts;
+                T_guide = linspace(0, Tend, N_guide);
+
+                % Analytical definition
+                batman_x = (abs(t)/t) * (0.3*abs(t) + 0.2*abs(abs(t)-1) + 2.2*abs(abs(t)-2) ...
+                    - 2.7*abs(abs(t)-3) - 3*abs(abs(t)-5) + 3*abs(abs(t)-7) ...
+                    + 5*sin((pi/4)*(abs(abs(t)-3) - abs(abs(t)-4) + 1)) ...
+                    + (5/4)*(abs(abs(t)-4) - abs(abs(t)-5) - 1)^3 ...
+                    - 5.3*cos(((pi/2) + asin(47/53)) * ((abs(abs(t)-7) - abs(abs(t)-8) - 1)/2)) ...
+                    + 2.8);
+                batman_y = (3/2)*abs(abs(t)-1) - (3/2)*abs(abs(t)-2) - (29/4)*abs(abs(t)-4) ...
+                    + (29/4)*abs(abs(t)-5) + (7/16)*(abs(abs(t)-2) - abs(abs(t)-3) - 1)^4 ...
+                    + 4.5*sin((pi/4)*(abs(abs(t)-3) - abs(abs(t)-4) - 1)) ...
+                    - 3*(sqrt(2)/5) * (abs(abs(abs(t)-5) - abs(abs(t)-7)))^(5/2) ...
+                    + 6.4*sin(((pi/2) + asin(47/53)) * ((abs(abs(t)-7) - abs(abs(t)-8) + 1)/2) + asin(56/64)) ...
+                    + 4.95;
+                z = [batman_x, batman_y, atan2(diff(batman_y, t), diff(batman_x, t))];
+                dz = diff(z, t);
+
+                % Analytical definition of remaining states and inputs
+                omega1 = (2*sqrt(dz(1)^2 + dz(2)^2) - obj.L*dz(3))/(2*obj.r); 
+                omega2 = (2*sqrt(dz(1)^2 + dz(2)^2) + obj.L*dz(3))/(2*obj.r); 
+                
+                x = [z(1), z(2), z(3)];
+                u = [omega1, omega2];
+
+                % Distribute reference points more uniformly
+                N_head = 6;
+                N_left = (N_guide - N_head)/2;
+                N_right = N_left;
+    
+                l_left = linspace(-8, -2, N_left);
+                l_head = linspace(-2, 2, N_head + 2);
+                l_right = linspace(2, 8, N_right);
+
+                l = unique([l_left, l_head(2:end-1), l_right]);
+
+                % Reference trajectory
+                obj.x_ref = [];
+                obj.u_ref = [];
+                for i = 1:N_guide - 1
+                    x_t = double(subs(x, t, 1e-6+l(i)));
+                    
+                    if i == N_guide-1
+                        u_t = double(subs(u, t, 1e-6+l(i)));
+                    else
+
+                        % Compute the average input in [T_guide(i), T_guide(i+1)] between n_samples samples
+                        n_samples = 10;
+                        u_t_average = zeros(1, obj.m);
+                        for j = 1:n_samples
+                            u_t = double(subs(u, t, 1e-6+l(i) + j*(l(i+1) - l(i))/n_samples));
+                            u_t_average = u_t_average + u_t;
+                        end
+                        u_t_average = u_t_average / n_samples;
+
+                        u_t = u_t_average;
+                    end
+
+                    x_t(3) = wrapTo2Pi(x_t(3)); % wrap the angle state
+
+                    obj.x_ref = [obj.x_ref; x_t];
+                    obj.u_ref = [obj.u_ref; u_t];
+                end
+                
+            end
+
+            % Arbitrary trajectory with Murray generation method
+            if nargin < 4 && strcmp(shape, 'arbitrary')
+                error('Please provide a cell array containing {N_points_filling, Z_guide} as extra parameters.');
+            elseif nargin == 4 && strcmp(shape, 'arbitrary')
+
+                assert(iscell(extra_params), 'The extra parameters must be a cell array containing {N_points_filling, Z_guide}');
+
+                % Extract the extra parameters
+                N_points_filling = extra_params{1};
+                Z_guide = extra_params{2};
+
+                assert(isscalar(N_points_filling), 'The number of points to fill must be a scalar value.');
+                assert(size(Z_guide, 1) == N_guide, 'The guide points matrix must have N_guide rows: as many as the intervals/guide points.');
+                assert(size(Z_guide, 2) == obj.p, 'The guide points matrix must have p columns: as many as the flat outputs.');
+
+                % Generation parameters
+                N_intervals = N_guide - 1;
+                Tend = N_intervals * N_points_filling * obj.Ts;
+                T_guide = linspace(0, Tend, N_guide);
+                N_basis = 2;
+                order = 0;
+
+                % Basis functions
+                syms x
+                basis = sym('x', [1 N_basis]);
+                for k = 1:N_basis
+                    basis(k) = x^(k-1);
+                end
+
+                % Trajectory filling
+                obj.x_ref = [];
+                obj.u_ref = [];
+                for i = 1:length(T_guide) - 1
+
+                    % Time interval
+                    t0 = T_guide(i);
+                    t1 = T_guide(i+1);
+
+                    % Matrix M
+                    m0 = obj.m_matrix(t0, basis, order);
+                    m1 = obj.m_matrix(t1, basis, 0);
+                    M0 = kron(eye(obj.p), m0);
+                    M1 = kron(eye(obj.p), m1);
+                    M = [M0; M1];
+
+                    % Guide points in the interval
+                    z_bar = [
+                        Z_guide(i, 1:obj.p)';
+                        Z_guide(i+1, 1:obj.p)';
+                    ];
+
+                    % Check that M is full column rank
+                    if rank(M) < size(M, 2)
+                        disp('Matrix M is not full column rank');
+                        return;
+                    end
+
+                    % Solve the system and reshape
+                    alpha = M\z_bar;
+                    alpha = reshape(alpha, [], obj.p)';
+
+                    % Reference function z(t) and its derivatives
+                    z = alpha*basis.';
+                    dz = diff(z, x);
+
+                    % Generate missing points
+                    N_filling = ceil((t1 - t0)/obj.Ts) + 1;
+                    T_filling = linspace(t0, t1, N_filling);
+                    for j = 1:length(T_filling) - 1
+
+                        % Evaluate z(t) and derivatives
+                        z_t = double(subs(z, x, T_filling(j)))';
+                        z_t(obj.p) = wrapTo2Pi(z_t(obj.p)); % wrap the angle state
+                        dz_t = double(subs(dz, x, T_filling(j)))';
+
+                        % Compute remaining states and inputs
+                        dtheta = atan2(dz_t(2), dz_t(1));
+                        omega1 = (2*sqrt(dz_t(1)^2 + dz_t(2)^2) - obj.L*dtheta)/(2*obj.r); 
+                        omega2 = (2*sqrt(dz_t(1)^2 + dz_t(2)^2) + obj.L*dtheta)/(2*obj.r); 
+                        
+                        x_t = [z_t(1), z_t(2), dtheta];
+                        u_t = [omega1, omega2];
+
+                        % Store the reference flat-output, states and inputs
+                        obj.x_ref = [obj.x_ref; x_t];
+                        obj.u_ref = [obj.u_ref; u_t];
+                    end
+                end
+            end
+
+            % Return reference states and inputs
+            x_ref = obj.x_ref;
+            u_ref = obj.u_ref;
         end
 
 
