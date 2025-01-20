@@ -405,7 +405,7 @@ classdef Helicopter < DynamicalSystem
         end
 
         % Trajectory generation function
-        function [x_ref, u_ref] = generate_trajectory(obj, N_guide, shape, extra_params)
+        function [x_ref, u_ref, Tend] = generate_trajectory(obj, N_guide, shape, extra_params)
             %//TODO: make this model also return Tend which is needed for MPC
 
             % Common generation parameters
@@ -438,7 +438,7 @@ classdef Helicopter < DynamicalSystem
 
                 % Analytical definition of remaining states and inputs
                 dxb = cos(z(4)) * dz(1) + sin(z(4)) * dz(2);
-                dyb = +sin(z(4)) * dz(1) + cos(z(4)) * dz(2);
+                dyb = -sin(z(4)) * dz(1) + cos(z(4)) * dz(2);
                 dzb = dz(3);
                 dpsi = dz(4);
                 ux = (cos(z(4)) * (ddz(1) - obj.kx * dz(1)) + sin(z(4)) * (ddz(2) - obj.kx * dz(2)) / obj.bx);
@@ -455,6 +455,8 @@ classdef Helicopter < DynamicalSystem
                 for i = 1:N_guide - 1
                     x_t = double(subs(x, t, T_guide(i)));
                     u_t = double(subs(u, t, T_guide(i)));
+
+                    x_t(7) = wrapTo2Pi(x_t(7)); % wrap the angle state
 
                     obj.x_ref = [obj.x_ref; x_t];
                     obj.u_ref = [obj.u_ref; u_t];
@@ -501,13 +503,85 @@ classdef Helicopter < DynamicalSystem
                     x_t = double(subs(x, t, 1e-6+T_guide(i)));
                     u_t = double(subs(u, t, 1e-6+T_guide(i)));
 
-                    x_t(7) = wrapTo2Pi(x_t(7)); % wrap the angle stat %, dxint, dyint];e
-
-                    disp(x_t);
+                    x_t(7) = wrapTo2Pi(x_t(7)); % wrap the angle state
 
                     obj.x_ref = [obj.x_ref; x_t];
                     obj.u_ref = [obj.u_ref; u_t];
                 end
+            end
+
+            % Batman trajectory
+            if nargin < 4 && strcmp(shape, 'batman')
+
+                % Assert that N_guide is at least 10
+                assert(N_guide >= 10, 'The number of guide points must be at least 10 for the Batman trajectory.');
+
+                % If N_guide odd add 1 to make it even
+                if mod(N_guide, 2) == 1
+                    N_guide = N_guide + 1;
+                end
+
+                % Simulation time and guide time steps
+                Tend = N_intervals * obj.Ts;
+                T_guide = linspace(0, Tend, N_guide);
+
+                % Analytical definition
+                batman_x = (abs(t)/t) * (0.3*abs(t) + 0.2*abs(abs(t)-1) + 2.2*abs(abs(t)-2) ...
+                    - 2.7*abs(abs(t)-3) - 3*abs(abs(t)-5) + 3*abs(abs(t)-7) ...
+                    + 5*sin((pi/4)*(abs(abs(t)-3) - abs(abs(t)-4) + 1)) ...
+                    + (5/4)*(abs(abs(t)-4) - abs(abs(t)-5) - 1)^3 ...
+                    - 5.3*cos(((pi/2) + asin(47/53)) * ((abs(abs(t)-7) - abs(abs(t)-8) - 1)/2)) ...
+                    + 2.8);
+                batman_y = (3/2)*abs(abs(t)-1) - (3/2)*abs(abs(t)-2) - (29/4)*abs(abs(t)-4) ...
+                    + (29/4)*abs(abs(t)-5) + (7/16)*(abs(abs(t)-2) - abs(abs(t)-3) - 1)^4 ...
+                    + 4.5*sin((pi/4)*(abs(abs(t)-3) - abs(abs(t)-4) - 1)) ...
+                    - 3*(sqrt(2)/5) * (abs(abs(abs(t)-5) - abs(abs(t)-7)))^(5/2) ...
+                    + 6.4*sin(((pi/2) + asin(47/53)) * ((abs(abs(t)-7) - abs(abs(t)-8) + 1)/2) + asin(56/64)) ...
+                    + 4.95;
+                z = [batman_x, batman_y, 0, atan2(diff(batman_y, t), diff(batman_x, t))];
+                dz = diff(z, t);
+                ddz = diff(dz, t);
+
+                % Analytical definition of remaining states and inputs
+                dxb = cos(z(4)) * dz(1) + sin(z(4)) * dz(2);
+                dyb = -sin(z(4)) * dz(1) + cos(z(4)) * dz(2);
+                dzb = dz(3);
+                dpsi = dz(4);
+                ux = (cos(z(4)) * (ddz(1) - obj.kx * dz(1)) + sin(z(4)) * (ddz(2) - obj.kx * dz(2)) / obj.bx);
+                uy = (cos(z(4)) * (ddz(2) - obj.ky * dz(2)) + sin(z(4)) * (-ddz(1) + obj.ky * dz(1)) / obj.by);
+                uz = (ddz(3) + obj.g) / obj.bz;
+                upsi = (ddz(4) - obj.kpsi * dz(4)) / obj.bpsi;
+
+                x = [z(1), z(2), z(3), dxb, dyb, dzb, z(4), dpsi];
+                u = [ux, uy, uz, upsi];
+
+
+                % Distribute reference points more uniformly
+                N_head = 6; % points for t in [-2,2]
+                N_left = (N_guide - N_head)/2;
+                N_right = N_left;
+    
+                l_left = linspace(-8, -2, N_left);
+                l_head = linspace(-2, 2, N_head + 2);
+                l_right = linspace(2, 8, N_right);
+
+                l = unique([l_left, l_head(2:end-1), l_right]);
+
+                % Reference trajectory
+                obj.x_ref = [];
+                obj.u_ref = [];
+                for i = 1:N_guide - 1
+                    % x_t = double(subs(x, t, 1e-6+T_guide(i)));
+                    % u_t = double(subs(u, t, 1e-6+T_guide(i)));
+                    x_t = double(subs(x, t, 1e-6+l(i)));
+                    u_t = double(subs(u, t, 1e-6+l(i)));
+
+                    x_t(7) = wrapTo2Pi(x_t(7)); % wrap the angle state
+
+                    obj.x_ref = [obj.x_ref; x_t];
+                    obj.u_ref = [obj.u_ref; u_t];
+                end
+                
             end
 
             % Arbitrary trajectory with Murray generation method

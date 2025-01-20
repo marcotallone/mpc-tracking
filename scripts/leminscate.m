@@ -6,45 +6,45 @@ Ts = 0.1;
 
 % nf = 4;
 
-N_intervals = 100;
-N_guide = N_intervals + 1;
-Tend = N_intervals * Ts;
-a = 2;
-theta = 0;
-delta = 2*pi/N_intervals;
-m_theta = delta/Ts; % angulat coefficient of theta(t) = m_theta * t
-% radius = 0.5;
+% N_intervals = 100;
+% N_guide = N_intervals + 1;
+% Tend = N_intervals * Ts;
+% a = 2;
+% theta = 0;
+% delta = 2*pi/N_intervals;
+% m_theta = delta/Ts; % angulat coefficient of theta(t) = m_theta * t
+% % radius = 0.5;
+% 
+% syms t real;
+% x = (a*sqrt(2)*cos(t))/(sin(t)^2 + 1);
+% y = (a*sqrt(2)*cos(t)*sin(t))/(sin(t)^2 + 1);
+% z = 0;
+% psi = atan2(diff(y, t), diff(x, t));
+% 
+% % Guide points and derivatives
+% T_guide = linspace(0, Tend, N_guide);
+% Z_guide = zeros(N_guide, nf);
+% for i = 1:N_guide
+% 
+%     % t_val = wrapTo2Pi(T_guide(i));ù
+%     t_val = theta;
+%     Z_guide(i, :) = [subs(x, t, t_val), subs(y, t, t_val), z, subs(psi, t, t_val)];
+% 
+%     % Z_guide(i, :) = [radius*cos(theta), radius*sin(theta), 0, 0.5*pi + theta];
+%     theta = theta + delta;
+% end 
 
-syms t real;
-x = (a*sqrt(2)*cos(t))/(sin(t)^2 + 1);
-y = (a*sqrt(2)*cos(t)*sin(t))/(sin(t)^2 + 1);
-z = 0;
-psi = atan2(diff(y, t), diff(x, t));
 
-% Guide points and derivatives
-T_guide = linspace(0, Tend, N_guide);
-Z_guide = zeros(N_guide, nf);
-for i = 1:N_guide
-
-    % t_val = wrapTo2Pi(T_guide(i));ù
-    t_val = theta;
-    Z_guide(i, :) = [subs(x, t, t_val), subs(y, t, t_val), z, subs(psi, t, t_val)];
-
-    % Z_guide(i, :) = [radius*cos(theta), radius*sin(theta), 0, 0.5*pi + theta];
-    theta = theta + delta;
-end 
-
-
-% Batman parametric equations
-function y = periodic_linear(x, y_min, y_max)
-    % Ensure y stays within the range [y_min, y_max] periodically
-    P = y_max - y_min;  % Period length
-    y = y_min + mod(x - y_min, P);
-
-    if y == 0
-        y = y + 1e-3;
-    end
-end
+% % Batman parametric equations
+% function y = periodic_linear(x, y_min, y_max)
+%     % Ensure y stays within the range [y_min, y_max] periodically
+%     P = y_max - y_min;  % Period length
+%     y = y_min + mod(x - y_min, P);
+% 
+%     if y == 0
+%         y = y + 1e-3;
+%     end
+% end
 
 % function x = batman_x(t)
 %     ad = @(a1, a2) abs(abs(a1)-a2);
@@ -133,45 +133,45 @@ psi = atan2(diff(y, t), diff(x, t));
 % l = linspace(0, N_guide*Ts, N_guide);
 % l = linspace(-8, 8, N_guide);
 
-% N1 = 50;  % Number of points in [-8, -1]
-% N2 = 6;   % Number of points in (-1,1)
-% N3 = 50;  % Number of points in [1,8]
-% N_guide = N1 + N2 + N3;
+N1 = 96;  % Number of points in [-8, -1]
+N2 = 8;   % Number of points in (-1,1)
+N3 = 96;  % Number of points in [1,8]
+N_guide = N1 + N2 + N3;
 
-% x1 = linspace(-8, -2, N1);   % Uniform in [-8, -1]
-% x2 = linspace(-2, 2, N2+2);  % Include -1 and 1, remove duplicates later
-% x3 = linspace(2, 8, N3);     % Uniform in [1, 8]
+x1 = linspace(-8, -2, N1);   % Uniform in [-8, -1]
+x2 = linspace(-2, 2, N2+2);  % Include -1 and 1, remove duplicates later
+x3 = linspace(2, 8, N3);     % Uniform in [1, 8]
 
-% l = unique([x1, x2(2:end-1), x3]);  % Merge and remove duplicate -1 and 1
+l = unique([x1, x2(2:end-1), x3]);  % Merge and remove duplicate -1 and 1
 
-% Total guide points
-N_guide = 100;
-
-% Define intervals of parameter t variation
-
-% between (-2, 2)
-N_head = int(N_guide*0.05);
-
-% between (-4, 2] and [2, 4)
-N_top_wings = int(N_guide*0.105);
-
-% between (-5, -4] and [4, 5)
-N_side_wings = int(N_guide*0.20);
-
-% between (-8, -5] and [5, 8)
-N_tail = int(N_guide*0.145);
-
-% Linspaces
-l_tail_left = linspace(-8, -5, N_tail);
-l_side_wings_left = linspace(-5, -4, N_side_wings+1); % Include -5, -4 and remove duplicates later
-l_top_wings_left = linspace(-4, -2, N_top_wings+1); % Include -4, -2 and remove duplicates later
-l_head = linspace(-2, 2, N_head + 1); % Include -2, 2 and remove duplicates later
-l_top_wings_right = linspace(2, 4, N_top_wings+1); % Include 2, 4 and remove duplicates later
-l_side_wings_right = linspace(4, 5, N_side_wings+1); % Include 4, 5 and remove duplicates later
-l_tail_right = linspace(5, 8, N_tail);
-
-% Merge and remove duplicates
-l = unique([l_tail_left, l_side_wings_left(2:end-1), l_top_wings_left(2:end-1), l_head(2:end-1), l_top_wings_right(2:end-1), l_side_wings_right(2:end-1), l_tail_right]);
+% % Total guide points
+% N_guide = 100;
+% 
+% % Define intervals of parameter t variation
+% 
+% % between (-2, 2)
+% N_head = int(N_guide*0.05);
+% 
+% % between (-4, 2] and [2, 4)
+% N_top_wings = int(N_guide*0.105);
+% 
+% % between (-5, -4] and [4, 5)
+% N_side_wings = int(N_guide*0.20);
+% 
+% % between (-8, -5] and [5, 8)
+% N_tail = int(N_guide*0.145);
+% 
+% % Linspaces
+% l_tail_left = linspace(-8, -5, N_tail);
+% l_side_wings_left = linspace(-5, -4, N_side_wings+1); % Include -5, -4 and remove duplicates later
+% l_top_wings_left = linspace(-4, -2, N_top_wings+1); % Include -4, -2 and remove duplicates later
+% l_head = linspace(-2, 2, N_head + 1); % Include -2, 2 and remove duplicates later
+% l_top_wings_right = linspace(2, 4, N_top_wings+1); % Include 2, 4 and remove duplicates later
+% l_side_wings_right = linspace(4, 5, N_side_wings+1); % Include 4, 5 and remove duplicates later
+% l_tail_right = linspace(5, 8, N_tail);
+% 
+% % Merge and remove duplicates
+% l = unique([l_tail_left, l_side_wings_left(2:end-1), l_top_wings_left(2:end-1), l_head(2:end-1), l_top_wings_right(2:end-1), l_side_wings_right(2:end-1), l_tail_right]);
 
 
 
