@@ -1,24 +1,37 @@
-% Trajectory generation and simulation for the unicycle model
+% Trajectory generation and simulation for the helicopter model
 clear all
 clc
 
-% Unicycle model parameters ────────────────────────────────────────────────────
-r  = 0.03;                          % wheel radius
-L  = 0.3;                           % distance between wheels
+% Helicopter model parameters ──────────────────────────────────────────────────
+bx = 2; by = 2; bz = 18; bpsi = 111;
+kx = -0.5; ky = -0.5; kpsi = -5; ki = 2;
+parameters = [bx; by; bz; bpsi; kx; ky; kpsi; ki];
+g = 9.81;
 Ts = 0.1;                           % sampling time
-x_constraints = 100*[
-    -2 2;                           % x position constraints
-    -2 2;                           % y position constraints
-    -pi 3*pi;                       % heading angle constraints
+x_constraints = 4*[                 % state constraints
+    -10, 10;
+    -10, 10;
+    -10, 10;
+    -10, 10;
+    -10, 10;
+    -10, 10;
+    -pi, 3*pi;
+    -25, 25;
 ];
-u_constraints = 100*[-30, 30];      % angular velocity constraints
-states = 3;                         % number of states
-outputs = 2;                        % number of outputs
+u_constraints = 100*[               % input constraints
+    -1, 1;
+    -1, 1;
+    -1, 1;
+    -1, 1;
+];
+
+states = 8;                         % number of states
+outputs = 4;                        % number of outputs
 Q_tilde = 0.75*1e-3*eye(states);    % Process noise covariance
 R_tilde = 1e-2*eye(outputs);        % Measurement noise covariance
 P0 = eye(states);                   % Initial state covariance
 
-model = Unicycle(r, L, Ts, x_constraints, u_constraints, P0, Q_tilde, R_tilde);
+model = Helicopter(parameters, Ts, x_constraints, u_constraints, P0, Q_tilde, R_tilde);
 
 
 % Reference Trajectory Generation ──────────────────────────────────────────────
@@ -141,7 +154,7 @@ end
 % Plot ─────────────────────────────────────────────────────────────────────────
 % Main trajectory plot
 figure(1);
-filename = 'images/unicycle_simulation.gif'; % Output GIF filename
+filename = 'images/helicopter_simulation.gif'; % Output GIF filename
 
 % Reference trajectory
 ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
@@ -155,7 +168,7 @@ end
 legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
 
 % Labels
-title('Trajectory Simulation for the Unicycle Model');
+title('Trajectory Simulation for the Helicopter Model');
 xlabel('x'); ylabel('y');
 grid on;
 axis equal;
@@ -189,3 +202,4 @@ for i = 1:Nsteps
         delete(x_line);
     end
 end
+
