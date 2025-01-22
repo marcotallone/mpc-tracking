@@ -604,7 +604,7 @@ classdef Helicopter < DynamicalSystem
                 % z = [radius * cos(f_theta(t)), radius * sin(f_theta(t)), 0, 0.5 * pi + f_theta(t)];
                 circle_x = radius * cos(sym_theta);
                 circle_y = radius * sin(sym_theta);
-                z = [circle_x, circle_y, atan2(diff(circle_y, t), diff(circle_x, t))];
+                z = [circle_x, circle_y, 0, atan2(diff(circle_y, t), diff(circle_x, t))];
                 dz = diff(z, t);
                 ddz = diff(dz, t);
 
@@ -625,8 +625,8 @@ classdef Helicopter < DynamicalSystem
                 obj.x_ref = [];
                 obj.u_ref = [];
                 for i = 1:N_guide - 1
-                    x_t = double(subs(x, t, T_guide(i)));
-                    u_t = double(subs(u, t, T_guide(i)));
+                    x_t = double(subs(x, t, 1e-6+T_guide(i)));
+                    u_t = double(subs(u, t, 1e-6+T_guide(i)));
 
                     x_t(7) = wrapTo2Pi(x_t(7)); % wrap the angle state
 
@@ -674,7 +674,16 @@ classdef Helicopter < DynamicalSystem
                 obj.u_ref = [];
                 for i = 1:N_guide - 1
                     x_t = double(subs(x, t, 1e-6+T_guide(i)));
-                    u_t = double(subs(u, t, 1e-6+T_guide(i)));
+                    % u_t = double(subs(u, t, 1e-6+T_guide(i)));
+
+                    % Compute the average input in given timestep
+                    n_samples = 20;
+                    u_t = zeros(1, obj.m);
+                    for j = 1:n_samples
+                        u_t_plus = double(subs(u, t, 1e-6+T_guide(i) + j*(T_guide(i+1) - T_guide(i))/n_samples));
+                        u_t = u_t + u_t_plus;
+                    end
+                    u_t = u_t / n_samples;
 
                     x_t(7) = wrapTo2Pi(x_t(7)); % wrap the angle state
 

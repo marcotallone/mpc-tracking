@@ -30,6 +30,7 @@ model = Unicycle(r, L, Ts, x_constraints, u_constraints, P0, Q_tilde, R_tilde);
 % radius = 0.5;
 % shape = "circle";
 % [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, radius);
+% max_start = 0.05;
 
 
 % Leminscate trajectory
@@ -37,6 +38,7 @@ N_guide = 100;
 a = 1;
 shape = "leminscate";
 [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
+max_start = 0.05;
 
 
 % % Arbitrary trajectory
@@ -71,7 +73,9 @@ shape = "leminscate";
 % MPC parameters
 % x0 = zeros(model.n,1);            % origin initial state
 % x0 = x_ref(1, :)';                % first reference initial state
-x0 = [1; 0; pi/4];                  % custom initial state (x, y, theta)
+% x0 = [1; 0; pi/4];                  % custom initial state (x, y, theta)
+
+
 N  = 10;                            % prediction horizon
 Q  = 1e3*eye(model.n);              % state cost
 R  = eye(model.m);                  % input cost
@@ -82,56 +86,64 @@ debug = 0;                          % MPC debug flag
 t = 0:Ts:Tend;                      % vector of time steps
 Nsteps = length(t) - (N+1);         % number of MPC optimization steps
 
-% Optimization
-mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
-[x, u] = mpc.optimize();
+for index = 1:10
+
+    % Set initial condition to a random point around x_ref(1, :) inside the ball of radius max_start
+    x0 = x_ref(1, :)' + max_start*randn(3, 1);
 
 
-% Plot
+    % Optimization
+    mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
+    [x, u] = mpc.optimize();
 
-% Main trajectory plot
-figure(1);
-
-% Reference trajectory
-ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
-hold on;
-arrow_length = 0.01;
-for i = 1:length(x_ref)
-    x_arrow = arrow_length * cos(x_ref(i, 3));
-    y_arrow = arrow_length * sin(x_ref(i, 3));
-    quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
 end
-legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
 
-% Labels
-title('Trajectory Tracking with MPC (Non-Linear Unicycle System)');
-xlabel('x1'); ylabel('x2');
-grid on;
-axis equal;
-hold on;
 
-%%%%%%%%%%
-% <<<<<<<<
-%%%%%%%%%%
-% Wait for figure
-pause(1);
-
-% Real trajectory
-for i = 1:Nsteps
-    x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
-    x_line.Color(4) = 0.5; % line transparency 50%
-    hold on;
-    x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
-    hold on;
-    quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 3)), arrow_length * sin(x(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
-    legend([ref_points, x_points],{'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
-    hold on;
-
-    pause(0.05);
-    if i < Nsteps
-        delete(x_line);
-    end
-end
+% % Plot
+% 
+% % Main trajectory plot
+% figure(1);
+% 
+% % Reference trajectory
+% ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
+% hold on;
+% arrow_length = 0.01;
+% for i = 1:length(x_ref)
+%     x_arrow = arrow_length * cos(x_ref(i, 3));
+%     y_arrow = arrow_length * sin(x_ref(i, 3));
+%     quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
+% end
+% legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
+% 
+% % Labels
+% title('Trajectory Tracking with MPC (Non-Linear Unicycle System)');
+% xlabel('x1'); ylabel('x2');
+% grid on;
+% axis equal;
+% hold on;
+% 
+% %%%%%%%%%%
+% % <<<<<<<<
+% %%%%%%%%%%
+% % Wait for figure
+% pause(1);
+% 
+% % Real trajectory
+% for i = 1:Nsteps
+%     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
+%     x_line.Color(4) = 0.5; % line transparency 50%
+%     hold on;
+%     x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
+%     hold on;
+%     quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 3)), arrow_length * sin(x(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
+%     legend([ref_points, x_points],{'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
+%     hold on;
+% 
+%     pause(0.05);
+%     if i < Nsteps
+%         delete(x_line);
+%     end
+% end
 
 
 

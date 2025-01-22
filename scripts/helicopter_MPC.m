@@ -8,18 +8,18 @@ bx = 2; by = 2; bz = 18; bpsi = 111;
 kx = -0.5; ky = -0.5; kpsi = -5; ki = 2;
 parameters = [bx; by; bz; bpsi; kx; ky; kpsi; ki];
 g = 9.81;
-Ts = 0.1;                           % sampling time
-x_constraints = 4*[                 % state constraints
-    -10, 10;
-    -10, 10;
-    -10, 10;
-    -10, 10;
-    -10, 10;
-    -10, 10;
+Ts = 0.1;                         % sampling time
+x_constraints = [                 % state constraints
+    -2, 2;
+    -2, 2;
+    -2, 2;
+    -3, 3;
+    -3, 3;
+    -2, 2;
     -pi, 3*pi;
     -25, 25;
 ];
-u_constraints = 100*[               % input constraints
+u_constraints = 2*[                   % input constraints
     -1, 1;
     -1, 1;
     -1, 1;
@@ -44,6 +44,7 @@ model = Helicopter(parameters, Ts, x_constraints, u_constraints, P0, Q_tilde, R_
 % radius = 0.5;
 % shape = "circle";
 % [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, radius);
+% max_start = 0.05;
 
 
 % Leminscate trajectory
@@ -51,7 +52,7 @@ N_guide = 100;
 a = 1;
 shape = "leminscate";
 [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
-
+max_start = 0.05;
 
 % % Arbitrary trajectory
 % N_guide = 9;
@@ -85,7 +86,8 @@ shape = "leminscate";
 % MPC parameters
 % x0 = zeros(model.n,1);            % origin initial state
 % x0 = x_ref(1, :)';                % first reference initial state
-x0 = [1; 0; pi/4];                  % custom initial state (x, y, theta)
+% x0 = [1; 0; pi/4];                  % custom initial state (x, y, theta)
+x0 = x_ref(1, :)' + max_start*randn(8, 1);
 N  = 18;                             % prediction horizon
 Q = diag([50, 50, 5, 10, 3, 3, 1, 2]);  % state cost
 R = diag([2, 2, 2, 2]);             % input cost
@@ -101,6 +103,19 @@ mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, d
 [x, u] = mpc.optimize();
 
 
+% for index = 1:10
+% 
+%     % Set initial condition to a random point around x_ref(1, :) inside the ball of radius max_start
+%     x0 = x_ref(1, :)' + max_start*randn(8, 1);
+% 
+% 
+%     % Optimization
+%     mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
+%     [x, u] = mpc.optimize();
+% 
+% end
+
+
 % Plot
 
 % Main trajectory plot
@@ -111,8 +126,8 @@ ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '
 hold on;
 arrow_length = 0.01;
 for i = 1:length(x_ref)
-    x_arrow = arrow_length * cos(x_ref(i, 3));
-    y_arrow = arrow_length * sin(x_ref(i, 3));
+    x_arrow = arrow_length * cos(x_ref(i, 7));
+    y_arrow = arrow_length * sin(x_ref(i, 7));
     quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
 end
 legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
@@ -137,7 +152,7 @@ for i = 1:Nsteps
     hold on;
     x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
     hold on;
-    quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 3)), arrow_length * sin(x(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
+    quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 7)), arrow_length * sin(x(1:i, 7)), 'AutoScale', 'off', 'Color', 'blue');
     legend([ref_points, x_points],{'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
     hold on;
 
@@ -162,8 +177,8 @@ end
 % hold on;
 % arrow_length = 0.03;
 % for i = 1:length(x_ref)
-%     x_arrow = arrow_length * cos(x_ref(i, 3));
-%     y_arrow = arrow_length * sin(x_ref(i, 3));
+%     x_arrow = arrow_length * cos(x_ref(i, 7));
+%     y_arrow = arrow_length * sin(x_ref(i, 7));
 %     quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
 % end
 % legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
@@ -188,7 +203,7 @@ end
 %     hold on;
 %     x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
 %     hold on;
-%     quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 3)), arrow_length * sin(x(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
+%     quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 7)), arrow_length * sin(x(1:i, 7)), 'AutoScale', 'off', 'Color', 'blue');
 %     hold on;
 %     target = scatter(x_ref(i, 1), x_ref(i, 2), 20, 'filled', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', 'red');
 %     hold on;

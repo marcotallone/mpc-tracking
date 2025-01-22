@@ -648,6 +648,12 @@ classdef MPC < handle
 			obj.set_reference(1);
 			u_pred = obj.U_REF;
 
+			% Initialize Mean Squared Error (MSE) metrics
+			MSE_x = 0;
+			MSE_u = 0;
+			wMSE_x = 0;
+			wMSE_u = 0;
+
 			% Solve optimization problem at each time step
 			for k = 1:obj.Nsteps
 
@@ -677,7 +683,7 @@ classdef MPC < handle
 				if obj.noise
 					update_last = obj.model.simulate(x_last, u_optimal, obj.Ts) + w(k,:)';
 					measured_output = obj.model.output(update_last, u_optimal) + v(k,:)';
-					x_last = obj.model.EKF_step(x_last, u_optimal, measured_output);
+					x_last = obj.model.EKF_estimate(x_last, u_optimal, measured_output);
 				else
 					x_last = obj.model.simulate(x_last, u_optimal, obj.Ts);
 				end
@@ -690,12 +696,36 @@ classdef MPC < handle
 				% Compute distances from reference
 				x_distance = norm(x_last - obj.x_ref((k) * n + (1:n)));
 				u_distance = norm(u_optimal - obj.u_ref((k) * m + (1:m)));
+				weighted_x_distance = (x_last - obj.x_ref((k) * n + (1:n)))' * obj.Q * (x_last - obj.x_ref((k) * n + (1:n)));
+				weighted_u_distance = (u_optimal - obj.u_ref((k) * m + (1:m)))' * obj.R * (u_optimal - obj.u_ref((k) * m + (1:m)));
+
+				% Update Mean Squared Error (MSE) metrics
+				MSE_x = MSE_x + x_distance^2;
+				MSE_u = MSE_u + u_distance^2;
+				wMSE_x = wMSE_x + weighted_x_distance;
+				wMSE_u = wMSE_u + weighted_u_distance;
 
 				% Display the current iteration results
-				fprintf("Iteration: %d/%d, ||x - x_ref|| = %f, ||u - u_ref|| = %f\n", k, obj.Nsteps, x_distance, u_distance);
-				% fprintf("                  x(7) = %f, x_ref(7) = %f\n", x_last(7), obj.x_ref((k) * n + 7));
-
+				% fprintf("Iteration: %d/%d, ||x - x_ref|| = %f, ||u - u_ref|| = %f\n", k, obj.Nsteps, x_distance, u_distance);
 			end
+
+			% Display the final Mean Squared Error (MSE) metrics
+			MSE_x = MSE_x / obj.Nsteps;
+			MSE_u = MSE_u / obj.Nsteps;
+			wMSE_x = wMSE_x / obj.Nsteps;
+			wMSE_u = wMSE_u / obj.Nsteps;
+			% fprintf("\nFinal Mean Squared Error (MSE) metrics:\n");
+			% fprintf("         State MSE = %f,          Input MSE = %f\n", MSE_x, MSE_u);
+			% fprintf("Weighted State MSE = %f, Weighted Input MSE = %f\n", wMSE_x, wMSE_u);
+
+
+			
+			% ------------------------------------------------------------------------------- cut
+
+			% Just for results
+			fprintf("\nhelicopter, circle, 10, %f, %f", MSE_x, MSE_u);
+
+			% ------------------------------------------------------------------------------- cut
 
 			% Reshape the state and input vectors
 			x= (reshape(x, n, length(x) / n))';
