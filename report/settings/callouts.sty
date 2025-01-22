@@ -1,0 +1,586 @@
+%┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓%
+%┃                                 CALLOUTS                                   ┃%
+%┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛%
+% NOTE: If you use this package independently, you need to define the colors!
+% NOTE: This package requires the LuaLaTeX compiler.
+
+\ProvidesPackage{callouts}[2024/05/21 Package providing colorful boxes]
+
+\RequirePackage{emoji}
+\setemojifont{Noto Color Emoji}
+\RequirePackage{fontawesome5}
+\RequirePackage[breakable]{tcolorbox}
+\RequirePackage{etoolbox}
+\RequirePackage{pgfkeys}
+\RequirePackage{xparse}
+
+% Save the original \fboxsep
+\newlength{\originalfboxsep}
+
+%┌────────────────────────────────────────────────────────────────────────────┐%
+%│                                Color Boxes                                 │%
+%└────────────────────────────────────────────────────────────────────────────┘%
+% Simple box you can choose the color of
+% Usage: 
+% ───────────────────────────────────────
+% \begin{cbox}[color] (default: boxcolor)
+%     ...content...
+% \end{cbox}
+% ───────────────────────────────────────
+
+\newtcolorbox{cbox}[1][boxcolor]{
+  breakable,              % allow the box to be split across pages
+  enhanced jigsaw,        % better frame drawing
+  colback   = #1,         % background color
+  colframe  = #1,         % frame color
+  coltext   = textcolor,  % text color
+  boxrule   = 0mm,        % frame thickness
+  left      = 7mm,        % left margin
+  right     = 7mm,        % right margin
+  top       = 3mm,        % top margin
+  bottom    = 3mm,        % bottom margin
+}
+
+%┌────────────────────────────────────────────────────────────────────────────┐%
+%│                                 Warnings                                   │%
+%└────────────────────────────────────────────────────────────────────────────┘%
+% Warning block
+% Usage:
+% ──────────────────────────────────────────
+% \begin{warning}[color] (default: boxcolor)
+%     ...content...
+% \end{warning}
+% ──────────────────────────────────────────
+
+\newtcolorbox{warning}[1][boxcolor]{
+  breakable,              % allow the box to be split across pages
+  enhanced jigsaw,        % better frame drawing
+  colback   = #1,         % background color
+  colframe  = yellow,     % frame color
+  coltext   = textcolor,  % text color
+  boxrule   = 0.3mm,      % frame thickness
+  left      = 7mm,        % left margin
+  right     = 7mm,        % right margin
+  top       = 3mm,        % top margin
+  bottom    = 3mm,        % bottom margin
+  overlay   = {           % overlay warning emoji
+    \node[anchor=north west,
+          yshift=-2mm,
+          xshift=1mm] 
+    at (frame.north west) {\emoji{warning}};
+  },
+}
+
+%┌────────────────────────────────────────────────────────────────────────────┐%
+%│                                   Info                                     │%
+%└────────────────────────────────────────────────────────────────────────────┘%
+% Info block
+% Usage:
+% ───────────────────────────────────────
+% \begin{info}[color] (default: boxcolor)
+%     ...content...
+% \end{info}
+% ───────────────────────────────────────
+
+\newtcolorbox{info}[1][boxcolor]{
+  breakable,              % allow the box to be split across pages
+  enhanced jigsaw,        % better frame drawing
+  colback   = #1,         % background color
+  colframe  = boxcolor,   % frame color
+  coltext   = textcolor,  % text color
+  boxrule   = 0mm,        % frame thickness
+  left      = 7mm,        % left margin
+  right     = 7mm,        % right margin
+  top       = 3mm,        % top margin
+  bottom    = 3mm,        % bottom margin
+  overlay   = {           % overlay drawing
+    \node[anchor=north west,
+          yshift=-2.5mm,
+          xshift=1mm] at (frame.north west)
+    {\textcolor{iconscolor}{\faIcon{info-circle}}};
+  },
+}
+
+% Blue info block (equivalent)
+\newtcolorbox{blueinfo}{
+  breakable,                  % allow the box to be split across pages
+  enhanced jigsaw,            % better frame drawing
+  colback       = darkblue,   % background color
+  colframe      = darkblue,   % frame color
+  opacityback   = 0.3,        % background opacity
+  opacityframe  = 0.3,        % frame opacity
+  coltext       = textcolor,  % text color
+  boxrule       = 0mm,        % frame thickness
+  left          = 7mm,        % left margin
+  right         = 7mm,        % right margin
+  top           = 3mm,        % top margin
+  bottom        = 3mm,        % bottom margin
+  overlay       = {           % overlay drawing
+    \node[anchor=north west,
+          yshift=-2.5mm,
+          xshift=1mm] at (frame.north west)
+    {\textcolor{iconscolor}{\faIcon{info-circle}}};
+  },
+}
+
+%┌────────────────────────────────────────────────────────────────────────────┐%
+%│                                 Examples                                   │%
+%└────────────────────────────────────────────────────────────────────────────┘%
+
+% Example icon
+\tcbset{exampleStyle/.style={
+  on line,                      % the box will be inline
+  nobeforeafter,                % no space before and after
+  arc       = 1mm,              % arc radius
+  boxsep    = 2pt,              % padding
+  colback   = gray,             % background color
+  colframe  = gray,             % frame color
+  coltext   = boxcolor,         % text color
+  fontupper = \small\bfseries,  % font style
+  boxrule   = 0pt,              % frame thickness
+  top       = 0mm,              % top margin
+  bottom    = 0mm,              % bottom margin
+  left      = 0.25mm,           % left margin
+  right     = 0.25mm,           % right margin
+}}
+
+\newcommand{\exampleSquare}{
+  \tcbox[exampleStyle]{EXAMPLE \theexample}
+}
+
+% Example counter
+\newcounter{example}
+\makeatletter
+\@addtoreset{example}{section}
+\makeatother
+\renewcommand{\theexample}{\thesection.\arabic{example}}
+
+% Example block
+% Usage:
+% ────────────────────────────────────────
+% \begin{example}[title][label] (optional)
+%     ...content...
+% \end{example}
+% ────────────────────────────────────────
+
+\NewDocumentEnvironment{example}{O{} O{}}{
+  \refstepcounter{example}\label{ex:#2} % increment counter and label
+  \begin{tcolorbox}[
+    breakable,                % allow the box to be split across pages
+    enhanced jigsaw,          % better frame drawing
+    colback   =background,    % background color
+    colframe  =gray,          % frame color
+    coltext   =gray,          % text color
+    boxrule   =0.3mm,         % frame thickness
+    left      =7mm,           % left margin
+    right     =7mm,           % right margin
+    top       =3mm,           % top margin
+    bottom    =3mm,           % bottom margin
+    overlay   = {             % overlay drawing
+      \node[anchor=north west, 
+            yshift=-2.5mm, 
+            xshift=1mm] at (frame.north west)
+      {\textcolor{gray}{\faIcon{edit}}};
+    },
+    before upper  = {         % print number here
+      \exampleSquare\ \textbf{#1} \par \vspace*{2mm} 
+    },
+  ]
+}{
+  \end{tcolorbox}
+}
+
+%┌────────────────────────────────────────────────────────────────────────────┐%
+%│                                Definition                                  │%
+%└────────────────────────────────────────────────────────────────────────────┘%
+
+% Definition Icon
+\tcbset{definitionStyle/.style={
+  on line,                      % the box will be inline
+  nobeforeafter,                % no space before and after
+  arc       = 1mm,              % arc radius
+  boxsep    = 2pt,              % padding
+  colback   = iconscolor,       % background color
+  colframe  = iconscolor,       % frame color
+  coltext   = boxcolor,         % text color
+  fontupper = \small\bfseries,  % font style
+  boxrule   = 0pt,              % frame thickness
+  top       = 0mm,              % top margin
+  bottom    = 0mm,              % bottom margin
+  left      = 0.25mm,           % left margin
+  right     = 0.25mm,           % right margin
+}}
+
+\newcommand{\defSquare}{
+  \tcbox[definitionStyle]{\textit{def} \thedefinition}
+}
+
+% Definition counter
+\newcounter{definition}
+\makeatletter
+\@addtoreset{definition}{section}
+\makeatother
+\renewcommand{\thedefinition}{\thesection.\arabic{definition}}
+
+% Definition block
+% Usage:
+% ───────────────────────────────────────────
+% \begin{definition}[title][label] (optional)
+%     ...content...
+% \end{definition}
+% ───────────────────────────────────────────
+
+\NewDocumentEnvironment{definition}{O{} O{}}{
+  \refstepcounter{definition}\label{def:#2} % increment counter and label
+  \begin{tcolorbox}[
+    breakable,                % allow the box to be split across pages
+    enhanced jigsaw,          % better frame drawing
+    colback   = boxcolor,     % background color
+    colframe  = boxcolor,     % frame color
+    coltext   = textcolor,    % text color
+    boxrule   = 0mm,          % frame thickness
+    left      = 7mm,          % left margin
+    right     = 7mm,          % right margin
+    top       = 3mm,          % top margin
+    bottom    = 3mm,          % bottom margin
+    overlay   = {             % overlay drawing
+      \node[anchor=north west, 
+            yshift=-2.9mm, 
+            xshift=1mm] at (frame.north west)
+      {\textcolor{iconscolor}{\faIcon{book-open}}};
+    },
+    before upper = {          % print number here
+      \defSquare\ \textbf{#1} \par \vspace*{2mm}
+    },
+  ]
+}{
+  \end{tcolorbox}
+}
+
+%┌────────────────────────────────────────────────────────────────────────────┐%
+%│                 Theorem, Proposition, Corollary, Lemma                     │%
+%└────────────────────────────────────────────────────────────────────────────┘%
+% NOTE: The following blocks share the same counter `th:`
+% NOTE: The style of the icons is the same of the definition (above)
+
+% Theorem Icon
+\newcommand{\theoremSquare}{
+  \tcbox[definitionStyle]{\textbf{THEOREM} \thetheorem}
+}
+
+% Corollary Icon
+\newcommand{\corollarySquare}{
+  \tcbox[definitionStyle]{\textbf{COROLLARY} \thetheorem}
+}
+
+% Proposition Icon
+\newcommand{\propSquare}{
+  \tcbox[definitionStyle]{\textbf{PROPOSITION} \thetheorem}
+}
+
+% Lemma Icon
+\newcommand{\lemmaSquare}{
+  \tcbox[definitionStyle]{\textbf{LEMMA} \thetheorem}
+}
+
+% Theorem, Corollary, Proposition, Lemma counter
+\newcounter{theorem}
+\makeatletter
+\@addtoreset{theorem}{section}
+\makeatother
+\renewcommand{\thetheorem}{\thesection.\arabic{theorem}}
+
+% Theorem block
+% Usage:
+% ────────────────────────────────────────
+% \begin{theorem}[title][label] (optional)
+%     ...content...
+% \end{theorem}
+% ────────────────────────────────────────
+
+\NewDocumentEnvironment{theorem}{O{} O{}}{
+  \refstepcounter{theorem}\label{th:#2} % increment counter and label
+  \begin{tcolorbox}[
+    breakable,                % allow the box to be split across pages
+    enhanced jigsaw,          % better frame drawing
+    colback   = boxcolor,     % background color
+    colframe  = boxcolor,     % frame color
+    coltext   = textcolor,    % text color
+    boxrule   = 0mm,          % frame thickness
+    left      = 7mm,          % left margin
+    right     = 7mm,          % right margin
+    top       = 3mm,          % top margin
+    bottom    = 3mm,          % bottom margin
+    overlay   = {             % overlay drawing
+      \node[anchor=north west, 
+            yshift=-2.9mm, 
+            xshift=1mm] at (frame.north west)
+      {\textcolor{iconscolor}{\faIcon{book}}};
+    },
+    before upper = {          % print number here
+      \theoremSquare\ \textbf{#1} \par \vspace*{2mm}
+    },
+  ]
+}{
+  \end{tcolorbox}
+}
+
+% Corollary block
+% Usage: same as the theorem block (above)
+
+\NewDocumentEnvironment{corollary}{O{} O{}}{
+  \refstepcounter{theorem}\label{th:#2} % increment counter and label
+  \begin{tcolorbox}[
+    breakable,                % allow the box to be split across pages
+    enhanced jigsaw,          % better frame drawing
+    colback   = boxcolor,     % background color
+    colframe  = boxcolor,     % frame color
+    coltext   = textcolor,    % text color
+    boxrule   = 0mm,          % frame thickness
+    left      = 7mm,          % left margin
+    right     = 7mm,          % right margin
+    top       = 3mm,          % top margin
+    bottom    = 3mm,          % bottom margin
+    overlay   = {             % overlay drawing
+      \node[anchor=north west, 
+            yshift=-2.9mm, 
+            xshift=1mm] at (frame.north west)
+      {\textcolor{iconscolor}{\faIcon{book}}};
+    },
+    before upper = {          % print number here
+      \corollarySquare\ \textbf{#1} \par \vspace*{2mm}
+    },
+  ]
+}{
+  \end{tcolorbox}
+}
+
+% Proposition block
+% Usage: same as the theorem block (above)
+
+\NewDocumentEnvironment{proposition}{O{} O{}}{
+  \refstepcounter{theorem}\label{th:#2} % increment counter and label
+  \begin{tcolorbox}[
+    breakable,                % allow the box to be split across pages
+    enhanced jigsaw,          % better frame drawing
+    colback   = boxcolor,     % background color
+    colframe  = boxcolor,     % frame color
+    coltext   = textcolor,    % text color
+    boxrule   = 0mm,          % frame thickness
+    left      = 7mm,          % left margin
+    right     = 7mm,          % right margin
+    top       = 3mm,          % top margin
+    bottom    = 3mm,          % bottom margin
+    overlay   = {             % overlay drawing
+      \node[anchor=north west, 
+            yshift=-2.9mm, 
+            xshift=1mm] at (frame.north west)
+      {\textcolor{iconscolor}{\faIcon{book}}};
+    },
+    before upper = {          % print number here
+      \propSquare\ \textbf{#1} \par \vspace*{2mm}
+    },
+  ]
+}{
+  \end{tcolorbox}
+}
+
+% Lemma block
+% Usage: same as theorem (above)
+
+\NewDocumentEnvironment{lemma}{O{} O{}}{
+  \refstepcounter{theorem}\label{th:#2} % increment counter and label
+  \begin{tcolorbox}[
+    breakable,                % allow the box to be split across pages
+    enhanced jigsaw,          % better frame drawing
+    colback   = boxcolor,     % background color
+    colframe  = boxcolor,     % frame color
+    coltext   = textcolor,    % text color
+    boxrule   = 0mm,          % frame thickness
+    left      = 7mm,          % left margin
+    right     = 7mm,          % right margin
+    top       = 3mm,          % top margin
+    bottom    = 3mm,          % bottom margin
+    overlay   = {             % overlay drawing
+      \node[anchor=north west, 
+            yshift=-2.9mm, 
+            xshift=1mm] at (frame.north west)
+      {\textcolor{iconscolor}{\faIcon{book}}};
+    },
+    before upper = {          % print number here
+      \lemmaSquare\ \textbf{#1} \par \vspace*{2mm}
+    },
+  ]
+}{
+  \end{tcolorbox}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% % Theorem block ----------------------------------------------------------------
+% % Command for the theorem box
+% \newcommand{\theoremSquare}{
+%   \setlength{\originalfboxsep}{\fboxsep} % set it to zero
+%   \setlength{\fboxsep}{2pt} % add padding
+%   \colorbox{iconscolor}{\textcolor{boxcolor}{\small\textbf{THEOREM \thetheorem}}}
+%   \setlength{\fboxsep}{\originalfboxsep} % restore \fboxsep
+% }
+
+% % Theorem block
+% \newcounter{theorem}
+% \makeatletter
+% \@addtoreset{theorem}{section}
+% \makeatother
+% \renewcommand{\thetheorem}{\thesection.\arabic{theorem}}
+% \newtcolorbox{theorem}[3][]{
+%   breakable,              % allow the box to be split across pages
+%   colback=boxcolor,       % background color
+%   colframe=boxcolor,      % frame color
+%   coltext=textcolor,      % text color
+%   boxrule=0mm,            % frame thickness
+%   left=0mm,               % left margin
+%   right=7mm,              % right margin
+%   top=3mm,                % top margin
+%   bottom=3mm,             % bottom margin
+%   enhanced jigsaw,        % better frame drawing
+%   overlay={               % overlay drawing
+%       \node[anchor=north west,
+%         yshift=-2.5mm,
+%         xshift=1mm] at (frame.north west)
+%       {\textcolor{iconscolor}{\faIcon{book}}};
+%     },
+%   left=7mm,               % indent
+%   before upper={          % increment counter and print number
+%       \stepcounter{theorem}\theoremSquare\ \textbf{#2} \par \vspace*{2mm}
+%     },
+%   label={th:#3},          % label for referencing "th:"
+%   #1
+% }
+
+% % Corollary block --------------------------------------------------------------
+% % This has the same counter sas the theorem but just changes the name displayed
+
+% % Command for the corollary box
+% \newcommand{\corollarySquare}{
+%   \setlength{\originalfboxsep}{\fboxsep} % set it to zero
+%   \setlength{\fboxsep}{2pt} % add padding
+%   \colorbox{iconscolor}{\textcolor{boxcolor}{\small\textbf{COROLLARY \thetheorem}}}
+%   \setlength{\fboxsep}{\originalfboxsep} % restore \fboxsep
+% }
+
+% % Corollary block
+% \newtcolorbox{corollary}[3][]{
+%   breakable,              % allow the box to be split across pages
+%   colback=boxcolor,       % background color
+%   colframe=boxcolor,      % frame color
+%   coltext=textcolor,      % text color
+%   boxrule=0mm,            % frame thickness
+%   left=0mm,               % left margin
+%   right=7mm,              % right margin
+%   top=3mm,                % top margin
+%   bottom=3mm,             % bottom margin
+%   enhanced jigsaw,        % better frame drawing
+%   overlay={               % overlay drawing
+%       \node[anchor=north west,
+%         yshift=-2.5mm,
+%         xshift=1mm] at (frame.north west)
+%       {\textcolor{iconscolor}{\faIcon{book}}};
+%     },
+%   left=7mm,               % indent
+%   before upper={\corollarySquare\ \textbf{#2} \par \vspace*{2mm} },
+%   label={th:#3},          % label for referencing "th:"
+%   #1
+% }
+
+% % Proposition block ------------------------------------------------------------
+% % Command for the proposition box
+% \newcommand{\propSquare}{
+%   \setlength{\originalfboxsep}{\fboxsep} % set it to zero
+%   \setlength{\fboxsep}{2pt} % add padding
+%   \colorbox{iconscolor}{
+%     \textcolor{boxcolor}{\small\textbf{PROPOSITION \thetheorem}}
+%   }
+%   \setlength{\fboxsep}{\originalfboxsep} % restore \fboxsep
+% }
+
+% % Proposition block
+% \newtcolorbox{proposition}[3][]{
+%   breakable,              % allow the box to be split across pages
+%   colback=boxcolor,       % background color
+%   colframe=boxcolor,      % frame color
+%   coltext=textcolor,      % text color
+%   boxrule=0mm,            % frame thickness
+%   left=0mm,               % left margin
+%   right=7mm,              % right margin
+%   top=3mm,                % top margin
+%   bottom=3mm,             % bottom margin
+%   enhanced jigsaw,        % better frame drawing
+%   overlay={               % overlay drawing
+%       \node[anchor=north west,
+%         yshift=-2.5mm,
+%         xshift=1mm] at (frame.north west)
+%       {\textcolor{iconscolor}{\faIcon{book}}};
+%     },
+%   left=7mm,               % indent
+%   before upper={          % increment counter and print number
+%       \stepcounter{theorem}\propSquare\ \textbf{#2} \par \vspace*{2mm}
+%     },
+%   label={th:#3},          % label for referencing "th:"
+%   #1
+% }
+
+% % Lemma block ------------------------------------------------------------------
+% % Command for the lemma box
+% \newcommand{\lemmaSquare}{
+%   \setlength{\originalfboxsep}{\fboxsep} % set it to zero
+%   \setlength{\fboxsep}{2pt} % add padding
+%   \colorbox{iconscolor}{
+%     \textcolor{boxcolor}{\small\textbf{LEMMA \thetheorem}}
+%   }
+%   \setlength{\fboxsep}{\originalfboxsep} % restore \fboxsep
+% }
+
+% % Lemma block
+% \newtcolorbox{lemma}[3][]{
+%   breakable,              % allow the box to be split across pages
+%   colback=boxcolor,       % background color
+%   colframe=boxcolor,      % frame color
+%   coltext=textcolor,      % text color
+%   boxrule=0mm,            % frame thickness
+%   left=0mm,               % left margin
+%   right=7mm,              % right margin
+%   top=3mm,                % top margin
+%   bottom=3mm,             % bottom margin
+%   enhanced jigsaw,        % better frame drawing
+%   overlay={               % overlay drawing
+%       \node[anchor=north west,
+%         yshift=-2.5mm,
+%         xshift=1mm] at (frame.north west)
+%       {\textcolor{iconscolor}{\faIcon{book}}};
+%     },
+%   left=7mm,               % indent
+%   before upper={          % increment counter and print number
+%       \stepcounter{theorem}\lemmaSquare\ \textbf{#2} \par \vspace*{2mm}
+%     },
+%   label={th:#3},          % label for referencing "th:"
+%   #1
+% }

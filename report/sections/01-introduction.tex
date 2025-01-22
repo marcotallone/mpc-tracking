@@ -1,0 +1,55 @@
+\documentclass[../main.tex]{subfiles}
+\graphicspath{{\subfix{../images/}}} % Images path
+
+\begin{document}
+
+\section{Introduction}
+
+Model Predictive Control (MPC) is a control strategy that has been widely
+adopted for the control of dynamical systems. The MPC approach is based on the
+solution of an optimization problem over a finite horizon, which allows for the
+consideration of constraints on the system states and inputs. When used for
+reference tracking, the MPC algorithm
+computes the optimal control input by minimizing a cost function that penalizes
+the deviation of the system states from the desired trajectory.\\
+However, real-world systems are often affected by noise and disturbances, which
+can lead to undesired results with the adoption of an MPC controller. Moreover,
+whenever the complete state of a system cannot be fully measured, the use of
+state estimators is required to infer the unmeasured components and
+apply the MPC algorithm.
+To address
+this issues, the Extended Kalman Filter (EKF) can be used to estimate the states
+of a non-linear system by fusing the available measurements with the system
+dynamics and incorporating information about the process and measurement
+noise.\\
+This report presents the implementation of a Model Predictive Control algorithm
+for non-linear dynamical systems based on successive linearization and
+discretization of the dynamics around operating points, as well as the
+development of an Extended Kalman Filter to estimate the states of the system in
+the presence of noise.\\
+The objectives of this project are both to study the effectiveness of the
+non-linear MPC algorithm applied for tracking reference trajectories under
+different circumstances and also to reproduce and compare the obtained results
+with the ones presented by \itt{Kunz, Huck and Summers}~\cite{helicopter} in
+their work on the tracking of a helicopter model.\\
+The following report is structured as follows. Section~\ref{sec:models}
+introduces the non-linear models used for the simulations with their dynamics,
+while Section~\ref{sec:trajectory-generation} explains how feasible
+trajectories can be generated for such models. Section~\ref{sec:mpc} then
+describes the linear time varying (LTV) approximation of the models 
+and how such approximation is used in the MPC algorithm. In
+Section~\ref{sec:ekf} the addition of the Extended Kalman Filter is instead
+presented.
+Finally,
+Section~\ref{sec:results} presents the results of the simulations followed by
+some final consideration in the last section.\\
+From a technical point of view all the algorithms and the models for the
+dynamical systems have been developed in \ttt{MATLAB}, version
+\ttt{R2024b}~\cite{matlab}. The code has been structured in a modular way to
+allow for easy testing and comparison of different algorithms and models.
+However, with the aim of maintaining a clear and concise report of the work, 
+the following sections will mostly present the results of this study and further concepts from a theoretical 
+point of view,
+while implementation details and practical usage instructions will be available on the author's GitHub repository~\cite{github}.
+
+\end{document}

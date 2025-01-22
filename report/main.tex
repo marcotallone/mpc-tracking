@@ -1,0 +1,74 @@
+\documentclass{settings/notex}
+
+% PREAMBLE ─────────────────────────────────────────────────────────────────────
+
+% Images path
+\graphicspath{{images/}}
+
+% Additional packages here
+\usepackage{blindtext}
+\usepackage{siunitx}
+\usepackage{makecell}
+\RequirePackage{emoji}
+\setemojifont{Noto Color Emoji}
+\RequirePackage{fontawesome5}
+
+% Subfiles package (best loaded last in the preamble)
+\usepackage{subfiles}
+
+% TITLE, AUTHOR AND DATE ───────────────────────────────────────────────────────
+
+% Title, Author and Date
+\title{Non-linear Reference Tracking via\\
+	Model Predictive Control and Extended Kalman Filter\\
+  \vspace{0.5cm}
+  \fontsize{12pt}{12pt}\selectfont{
+    Modelling and Control of Cyber-Physical Systems II\\
+    \vspace{0.25cm}
+    University of Trieste (UniTS)
+  }
+}
+
+\author{Marco Tallone}
+\date{January 2025}
+
+% DOCUMENT ─────────────────────────────────────────────────────────────────────
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+This report presents the implementation of a Model Predictive Control (MPC)
+algorithm and an Extended Kalman Filter (EKF) to perform reference tracking of
+non-linear dynamical systems. The implemented algorithms have been tested and assessed on different non-linear systems and multiple
+trajectories. Results confirm the effectiveness of the proposed MPC approach in
+tracking the desired trajectories, even in the presence of noise and
+disturbances through the use of the EKF.
+\end{abstract}
+
+% \tableofcontents
+
+% Sections
+\subfile{sections/01-introduction}
+\subfile{sections/02-models}
+\subfile{sections/03-trajectory-generation}
+\subfile{sections/04-mpc}
+
+
+% Bibliography
+% Remember to compile with the sequence:
+% lualatex -> bibtex -> lualatex -> lualatex
+\pagebreak
+\bibliographystyle{plainurl}
+\bibliography{bibliography}
+
+% % Appendix
+% \pagebreak
+% \appendix
+% \renewcommand{\thesection}{\Alph{section}} % Section numbering to A, B, C, ...
+% \renewcommand{\thesubsection}{\thesection\arabic{subsection}} % Subsection numbering to A1, A2, ...
+% \subfile{sections/appendix}
+
+\end{document}

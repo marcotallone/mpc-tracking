@@ -1,0 +1,118 @@
+\documentclass[../main.tex]{subfiles}
+\graphicspath{{\subfix{../images/}}} % Images path
+
+\begin{document}
+
+\section{MPC Problem Formulation}\label{sec:mpc}
+
+The Model Predictive Control (MPC) algorithm is based on the solution of an
+optimization problem over a finite horizon of length $N$. In general, the formulation of such
+optimization problem requires a discrete-time representation of the model
+dynamics. Moreover, in order to cast the MPC problem as a Quadratic Program
+(QP) one and hence solve it efficiently, the model must also be linear.
+The models introduced in Section~\ref{sec:models} are not only defined in
+continuous-time, but also highly non-linear. To overcome this issues, a Linear
+Time Varying (LTV) approximation of the dynamics is here presented. \mbox{Then, two
+formulations of the MPC algorithm as a QP problem are introduced.}
+
+\subsection{Linear Time Varying (LTV) Model}
+
+The LTV model is obtained by successive linearization and discretization of the
+non-linear dynamics $\dot{\mbf{x}} = \mbf{f}(\mbf{x}, \mbf{u})$ around a set of nominal state and input trajectories sampled
+at a fixed regular time intervals $T_s$:
+\begin{equation*}
+	\begin{aligned}
+		\bar{\mbf{x}}_k &= \bar{\mbf{x}}(k T_s), \quad k = k_0, \ldots, k_0 + N + 1\\
+		\bar{\mbf{u}}_k &= \bar{\mbf{u}}(k T_s), \quad k = k_0, \ldots, k_0 + N
+	\end{aligned}
+\end{equation*}
+
+Hence, the system is first linearized around the nominal states and inputs as
+follows:
+\begin{equation*}
+	\delta \mbf{x}(t) = \mbf{A}_k \delta \mbf{x}(t) + \mbf{B}_k \delta
+	\mbf{u}(t)
+\end{equation*}
+\begin{equation}\label{eq:linearization}
+	\mbf{A}_k = \left. \frac{\partial \mbf{f}}{\partial \mbf{x}}
+		\right|_{\bar{\mbf{x}}_k, \bar{\mbf{u}}_k}, \quad
+		\mbf{B}_k = \left. \frac{\partial \mbf{f}}{\partial \mbf{u}}
+			\right|_{\bar{\mbf{x}}_k, \bar{\mbf{u}}_k}
+\end{equation}
+\begin{equation*}
+	\delta \mbf{x}(t) = \mbf{x}(t) - \bar{\mbf{x}}_k, \quad
+	\delta \mbf{u}(t) = \mbf{u}(t) - \bar{\mbf{u}}_k
+\end{equation*}
+
+with $k T_s \leq t < (k + 1) T_s$ for $k = k_0, \ldots, k_0 + N$. Then, the obtained
+linear system is discretized using first order forward Euler method:
+\begin{equation*}
+	\delta \mbf{x}_{k+1} = \mbf{A}_{d,k} \delta \mbf{x}_k + \mbf{B}_{d,k} \delta
+	\mbf{u}_k
+\end{equation*}
+\begin{equation}\label{eq:discretization}
+	\mbf{A}_{d,k} = \mbb{I} + T_s \mbf{A}_k, \quad \mbf{B}_{d,k} = T_s
+	\mbf{B}_k
+\end{equation}
+\begin{equation*}
+	\delta \mbf{x}_k = \mbf{x}_k - \bar{\mbf{x}}_k, \quad
+	\delta \mbf{u}_k = \mbf{u}_k - \bar{\mbf{u}}_k
+\end{equation*}
+
+This can eventually be rewritten as:
+\begin{equation}
+	\begin{aligned}
+		\mbf{x}_{k+1} &= \mbf{A}_{d,k} \mbf{x}_k + \mbf{B}_{d,k} \mbf{u}_k +
+		\mbf{d}_k\\
+		\mbf{d}_k &= \bar{\mbf{x}}_{k+1} - \mbf{A}_{d,k} \bar{\mbf{x}}_k -
+		\mbf{B}_{d,k} \bar{\mbf{u}}_k
+	\end{aligned}
+\end{equation}
+
+Using this LTV model, the MPC controller is able to solve an optimization
+problem for each $k^{th}$ time step in the prediction horizon $N$. In particular, the
+result of the optimization will be the optimal input sequence that minimizes the
+cost function in the prediction horizon, from which only the first input will
+actually be applied. Hence, in successive applications of the algorithm, a
+nominal input sequence for future linearizations can be obtained as the
+remaining part of the optimal input sequence\footnote{With the last input
+duplicated as $N$ nominal inputs are needed.} while the nominal states can be
+obtained by applying the nominal inputs to the non-linear dynamics. For the
+first iteration of the MPC algorithm, the reference input sequence can be used
+even if it will result in an inaccurate linearization.
+
+\subsection{MPC Formulations}
+
+The Model Predictive Control problem with the LTV
+model approximation of the non-linear dynamics is formulated as the optimization
+problem~\ref{eq:mpc-problem}, which is solved at every time instance $t$.
+\begin{equation}\label{eq:mpc-problem}
+	\begin{aligned}
+		\min_{\mbf{U}_{t \to t+N | t}} \quad & \sum_{k=t}^{t+N} \left( \Delta
+			\mbf{x}_k^T \mbf{Q} \Delta \mbf{x}_k + \Delta \mbf{u}_k^T \mbf{R}
+			\Delta \mbf{u}_k \right)\\
+		\text{s.t.} \quad & \mbf{x}_{k+1 | t} = \mbf{A}_{d,k | t} \mbf{x}_{k |
+		t} + \mbf{B}_{d,k | t} \mbf{u}_{k | t} + \mbf{d}_{k | t}\\
+						  & \mbf{d}_{k | t} = \bar{\mbf{x}}_{k+1 | t} -
+						  \mbf{A}_{d,k | t} \bar{\mbf{x}}_{k | t} - \mbf{B}_{d,k
+						  | t} \bar{\mbf{u}}_{k | t}\\
+						  & \mbf{x}_{k | t} \in \mcal{X}, \quad k = t, \ldots,
+						  t+N\\
+						  & \mbf{u}_{k | t}
+						  \in \mcal{U}, \quad k = t, \ldots, t+N+1\\
+		\end{aligned}
+\end{equation}
+
+Where $\mbf{U}_{t \to t+N | t} = \begin{bmatrix} \mbf{u}_{t | t} & \ldots &
+\mbf{u}_{t+N | t} \end{bmatrix}^T$ is the input sequence to be optimized, while
+$\Delta \mbf{x}_k = \mbf{x}_{k | t} - \bar{\mbf{x}}_{k}$ and $\Delta \mbf{u}_k =
+\mbf{u}_{k | t} - \bar{\mbf{u}}_{k}$ are the differences between the predicted
+states and the reference trajectory. The matrices $\mbf{Q}$ and $\mbf{R}$ are
+the weighting matrices for the state and input errors, respectively.
+This general expression of the MPC problem can be further casted into a QP
+problems in two different formulations: the \itt{dense} formulation and the
+\itt{sparse} formulation.
+
+
+\end{document}
+

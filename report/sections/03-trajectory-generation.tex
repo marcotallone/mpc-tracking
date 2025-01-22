@@ -1,0 +1,203 @@
+\documentclass[../main.tex]{subfiles}
+\graphicspath{{\subfix{../images/}}} % Images path
+
+\begin{document}
+
+\section{Trajectory Generation}\label{sec:trajectory-generation}
+
+Prior to the implementation of the MPC algorithm for reference tracking, it's
+compulsory to properly define the reference trajectories that the system should
+follow. In particular, any desired trajectory should be feasible for the given system.
+Formally, given a continuous-time reference trajectory 
+$\begin{bmatrix} \mbf{x}_{\text{ref}}(t) & \mbf{u}_{\text{ref}}(t) \end{bmatrix}^T$, in order
+for it to be feasible, it must satisfy the differential equations of the system
+dynamics within the given constraints:
+\begin{equation}
+	\begin{aligned}
+		&\dot{\mbf{x}}_{\text{ref}}(t) = \mbf{f}(\mbf{x}_{\text{ref}}(t), \mbf{u}_{\text{ref}}(t))\\
+		&\mbf{x}_{\text{ref}} \in \mcal{X}, \quad \mbf{u}_{\text{ref}} \in \mcal{U}
+	\end{aligned}
+\end{equation}
+
+where $\mcal{X}$ and $\mcal{U}$ are the sets of feasible states and inputs for
+the system while the function $\mbf{f}(\cdot, \cdot): \mbb{R}^n \times \mbb{R}^m \rightarrow
+\mbb{R}^n$ describes the non-linear state dynamics.\\
+Th approaches considered in this study for the feasible trajectory generation task rely on the definition of \itt{differential flatness}
+introduced by \itt{Murray}~\cite{murray}. Formally, a non-linear
+system is \itt{differentially flat} if there exists a function $\Gamma(\cdot)$
+such that
+\begin{equation*}
+	\mbf{z} = \Gamma(\mbf{x}, \mbf{u}, \dot{\mbf{u}}, \ldots, \mbf{u}^{(p)})
+\end{equation*}
+
+where $\mbf{z}$ are the so-called \itt{flat outputs}. For a differentially flat
+system, feasible trajectories can be written as functions of the flat outputs
+$\mbf{z}$ and their derivatives. Hence, the general idea is to find a mapping 
+\begin{equation*}
+	\begin{aligned}
+		\mbf{x} &= \mbf{x}(\mbf{z}, \dot{\mbf{z}}, \ldots, \mbf{z}^{(q)})\\
+		\mbf{u} &= \mbf{u}(\mbf{z}, \dot{\mbf{z}}, \ldots, \mbf{z}^{(q)})
+	\end{aligned}
+\end{equation*}
+
+between the original states and the flat outputs such that all states and inputs
+can be determined from these outputs without integration. Then, a feasible
+trajectory can simply  be obtained by only providing the reference values for the flat
+outputs (and possibly their derivatives), since the remaining reference states
+and associated inputs can be recovered from the mapping.\\
+It's easy to show that, for the unicycle model described by
+equation~\eqref{eq:unicycle-dynamics}, the Cartesian coordinates $z_1 = x$ and $z_2 = y$ are flat outputs. The
+remaining heading angle state\footnote{In the implemented models, the
+	$atan2(\cdot, \cdot)$ function has been used instead of the normal arctangent to
+obtain the correct heading angle in the range $[-\pi, \pi]$.} and the control inputs can in fact be obtained
+from these two outputs and their first order derivatives as shown in
+equations~\eqref{eq:unicycle-flat-outputs}.
+\begin{equation}\label{eq:unicycle-flat-outputs}
+	\theta = \arctan\left(\frac{\dot{z_2}}{\dot{z_1}}\right), \quad
+	\omega_1 = \frac{2 \sqrt{\dot{z_1}^2 + \dot{z_2}^2} + L \dot{\theta}}{2 r},
+	\quad
+	\omega_2 = \frac{2 \sqrt{\dot{z_1}^2 + \dot{z_2}^2} - L \dot{\theta}}{2 r}
+\end{equation}
+
+For what concerns the helicopter model instead, a set of flat outputs is given
+by the state components
+\begin{equation*}
+	z_1 = x_I, \quad z_2 = y_I, \quad z_3 = z_I, \quad z_4 = \psi
+\end{equation*}
+
+which allow to obtain the remaining states and inputs according to
+equations~\eqref{eq:helicopter-flat-outputs}.
+
+\begin{equation}\label{eq:helicopter-flat-outputs}
+	\begin{aligned}
+		\dot{x}_B &= \cos(z_4) \dot{z}_1 + \sin(z_4) \dot{z}_2\\
+		\dot{y}_B &= -\sin(z_4) \dot{z}_1 + \cos(z_4) \dot{z}_2\\
+		\dot{z}_B &= \dot{z}_3\\
+		\dot{\psi} &= \dot{z}_4\\
+		u_x &= \frac{1}{b_x} \left( cos(z_4) \left[ \ddot{z}_1 - k_x \dot{z}_1
+		\right] + sin(z_4) \left[ \ddot{z}_2 - k_x \dot{z}_2 \right] \right)\\
+		u_y &= \frac{1}{b_y} \left( cos(z_4) \left[ \ddot{z}_2 - k_y \dot{z}_2 \right] + sin(z_4) \left[ -\ddot{z}_1 + k_y \dot{z}_1 \right] \right)\\
+		u_z &= \frac{1}{b_z} \left( \ddot{z}_3 + g \right)\\
+		u_{\psi} &= \frac{1}{b_{\psi}} \left( \ddot{z}_4 - k_{\psi} \dot{z}_4
+			\right)
+	\end{aligned}
+\end{equation}
+
+After having identified the flat outputs and the required mappings to
+reconstruct state and inputs components, the
+generation of the feasible trajectory can then be conducted in two ways.\\
+
+\pagebreak
+The first approach, which is the one used in this study, consists in providing
+an analytical expression $\mbf{z}(t)$ for the evolution of the flat outputs over time and
+then sampling  the resulting trajectory at discrete time steps
+$\{t_k\}_{k=1}^{N_{guide}}$	to obtain a finite set of $N_{guide}$ reference
+points $\{(\mbf{x}_{\text{ref}, k}, \mbf{u}_{\text{ref}, k})\}_{k=1}^{N_{guide}}$.
+In particular, two trajectories have been generated with this technique:
+\begin{itemize}
+	
+	\item a \bft{circular} trajectory of radius $r_0 = 0.5$ whose flat
+		outputs are defined respectively by the parametric equations:
+		\vspace{-0.5cm}
+		\begin{multicols}{2}
+			\begin{equation*}
+				\begin{cases}
+					z_1(t) = r_0 \cos(t)\\
+					z_2(t) = r_0 \sin(t)\\
+				\end{cases}
+			\end{equation*}
+			\begin{center}
+				for the unicycle model\\
+			\end{center}
+		\columnbreak
+			\begin{equation*}
+				\begin{cases}
+					z_1(t) = r_0 \cos(t)\\
+					z_2(t) = r_0 \sin(t)\\
+					z_3(t) = 0\\
+					z_4(t) = \text{atan2}\left(\dot{z}_2(t), \dot{z}_1(t)\right)
+				\end{cases}
+			\end{equation*}
+			\begin{center}
+				for the helicopter model
+			\end{center}
+		\end{multicols}
+
+	\item a \bft{leminscate} (or ``\itt{figure-eight}'') trajectory with
+		parameter $a = 1$ described by:
+		\vspace{-0.1cm}
+		\begin{multicols}{2}
+			\begin{equation*}
+				\begin{cases}
+					z_1(t) = \frac{a \sqrt{2} \cos(t)}{\sin(t)^2 + 1}\\
+					z_2(t) = \frac{a \sqrt{2} \cos(t) \sin(t)}{\sin(t)^2 + 1}
+				\end{cases}
+			\end{equation*}
+			\begin{center}
+				for the unicycle model\\
+			\end{center}
+		\columnbreak
+			\begin{equation*}
+				\begin{cases}
+					z_1(t) = \frac{a \sqrt{2} \cos(t)}{\sin(t)^2 + 1}\\
+					z_2(t) = \frac{a \sqrt{2} \cos(t) \sin(t)}{\sin(t)^2 + 1}\\
+					z_3(t) = 0\\
+					z_4(t) = \text{atan2}\left(\dot{z}_2(t), \dot{z}_1(t)\right)
+				\end{cases}
+			\end{equation*}
+			\begin{center}
+				for the helicopter model
+			\end{center}
+		\end{multicols}
+
+\end{itemize}
+
+In the conducted experiments, the models performed a full
+revolution\footnote{However, the implementation easily allows to perform more than one
+lap around the given shapes.} around the respective trajectories in a determined amount of
+time.
+Specifically, due to the discretization with sampling time $T_s$ later introduced in Section~\ref{sec:mpc}, the total time to complete the
+trajectory has been set to
+$T_{end} = N_{guide} \cdot T_s$ for simplicity. In this way, at each iteration,
+the discretized system has one time-step to reach the next reference point.
+Moreover, notice that the discretization assumes a constant input applied to
+the system at each time-step. Hence, a possibility would be to just sample the
+reference inputs at the beginning of each time interval $\mbf{u}_{\text{ref}, k} =
+\mbf{u}_{\text{ref}}(t_k)$. However, due to the continuous-time nature of the 
+inputs obtained with this approach, a more realistic approximation of the
+system's behavior can be obtained by averaging the values of the inputs over
+each time interval:
+\begin{equation*}
+	\mbf{u}_{\text{ref}, k} = \frac{1}{N_{samples}} \sum_{i=1}^{N_{samples}}
+	\mbf{u}_{\text{ref}}\left(t_k + \frac{i
+	\cdot T_s}{N_{samples}} \right)
+\end{equation*}
+
+where $N_{samples}$ is the number of sub-samples taken in each time interval to
+compute the average, which depends on the specific trajectory and model considered.\\
+When an analytical expression for the flat outputs is not available, the
+approach proposed by \itt{Murray}~\cite{murray} can be used to generate feasible
+trajectories. In this case the values of the flat outputs (and possibly their
+derivatives up to a determined order) for a minimal\footnote{At least $2$
+points.} set of representative points of the desired trajectory are needed.
+Then, between any two given points, the flat outputs can be parametrized as a
+linear combination of a finite set of basis functions. The coefficients of this
+linear combination are determined by simply solving a linear system of equations
+involving the known values of the flat outputs and their derivatives at the
+endpoints of the interval. This results in a parametrized analytical expression
+for the flat outputs between the given points, which can then be resampled to
+obtain a higher number of reference points.\\
+Therefore, this approach presents the huge advantage of being able to generate
+feasible and smooth point-to-point trajectories for any arbitrary set of initial
+reference points.\\
+In practice, however, to generate realistic inputs for most systems, high order
+derivatives of the basis functions involved in the parametrization are often required,
+especially when the desired trajectories present a high number of sharp turns
+or sudden changes in direction. This turns out to be unpractical since the known
+values for the flat outputs derivatives of the same order must be provided at
+least for the initial set of points. Hence, although implemented, this method
+has not been used in this study, but further information can be found in
+Appendix~\ref{murray-method} or in the original work by
+\itt{Murray}~\cite{murray}.
+
+\end{document}

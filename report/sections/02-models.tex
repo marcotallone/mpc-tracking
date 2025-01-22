@@ -1,0 +1,88 @@
+\documentclass[../main.tex]{subfiles}
+\graphicspath{{\subfix{../images/}}} % Images path
+
+\begin{document}
+
+\section{Non-linear Models}\label{sec:models}
+
+In order to test and asses the performance of the implemented MPC and EKF
+algorithms, two systems of different complexity have been considered. In particular, these are:
+
+\begin{itemize}
+	\item A \bft{Unicycle model}
+	\item A \bft{Helicopter model}
+\end{itemize}
+
+Both systems are mathematically described by non-linear dynamics.
+
+\subsection{Unicycle Model}
+
+The first system is a relatively simple unicycle model described by the
+non-linear dynamics in equations~\eqref{eq:unicycle-dynamics}.
+This consists of a rigid body moving on a plane with two parallel wheels of radius
+$r$ separated by a distance $L$.
+\begin{equation}\label{eq:unicycle-dynamics}
+  \begin{cases}
+	  \dot{x} = \frac{r}{2} (\omega_1 + \omega_2) \cos(\theta)\\
+	  \dot{y} = \frac{r}{2} (\omega_1 + \omega_2) \sin(\theta)\\
+	  \dot{\theta} = \frac{r}{L} (\omega_1 - \omega_2)
+  \end{cases}
+\end{equation}
+
+The state of the system is hence defined by the Cartesian coordinates $x$ and
+$y$ of the center of mass of the unicycle and the heading angle $\theta$. The
+inputs are instead the angular velocities of the two wheels $\omega_1$ and
+$\omega_2$.
+\begin{equation*}
+	\mbf{x}(t) = \begin{bmatrix} x(t) & y(t) & \theta(t) \end{bmatrix}^T
+	\quad \text{and} \quad
+	\mbf{u}(t) = \begin{bmatrix} \omega_1(t) & \omega_2(t) \end{bmatrix}^T
+\end{equation*}
+
+\subsection{Helicopter Model}
+
+The second system represents instead a miniature helicopter model taken from the
+paper by \itt{Kunz, Huck and Summers}~\cite{helicopter}. As explained by the
+authors, the dynamics can be described by the Newton-Euler laws of mechanics for
+single rigid bodies. However, a simplification has been made in favor of an
+easier implementation of the MPC algorithm for this model. In particular,
+introducing the assumption that the pitch and roll inputs directly act on the
+translational accelerations, it's possible to omit the pitch and roll angular
+states of the helicopter body. The result is the non-linear dynamics in
+equations~\eqref{eq:helicopter-dynamics}.
+\begin{equation}\label{eq:helicopter-dynamics}
+	\begin{cases}
+		\dot{x}_I = cos(\psi) \dot{x}_B - sin(\psi) \dot{y}_B\\
+		\dot{y}_I = sin(\psi) \dot{x}_B + cos(\psi) \dot{y}_B\\
+		\dot{z}_I = \dot{z}_B\\
+		\ddot{x}_B = b_x u_x + k_x \dot{x}_B + \dot{\psi} \dot{y}_B\\
+		\ddot{y}_B = b_y u_y + k_y \dot{y}_B - \dot{\psi} \dot{x}_B\\
+		\dot{z}_B = b_z u_z - g\\
+		\dot{\psi} = \dot{\psi}\\
+		\ddot{\psi} = b_{\psi} u_{\psi} + k_{\psi} \dot{\psi}
+	\end{cases}
+\end{equation}
+
+where $x_I$, $y_I$, $z_I$ denote the position of the helicopter in the
+inertial frame, $\dot{x}_B$, $\dot{y}_B$, $\dot{z}_B$ the velocities of the
+helicopter in the body frame, $\psi$ the yaw heading angle and $\dot{\psi}$ its
+rotational velocity in yaw. The control inputs for pitch, roll, thrust and yaw
+are instead denoted by $u_x$, $u_y$, $u_z$, $u_{\psi}$.\\
+Due to implementation necessities, the only difference with respect to the
+original paper is the absence of the augmented integral states which were used
+to reduce steady-state error. The rest of the setup is consistent with the
+original work.\\
+In this case we hence obtained a model having $8$ state components and $4$
+control inputs formalized as follows.
+
+\begin{equation*}
+	\begin{aligned}
+		\mbf{x}(t) &= \begin{bmatrix} x_I(t) & y_I(t) & z_I(t) & \dot{x}_B(t) &
+		\dot{y}_B(t) & \dot{z}_B(t) & \psi(t) & \dot{\psi}(t) \end{bmatrix}^T\\
+			&\text{and}\\
+		\mbf{u}(t) &= \begin{bmatrix} u_x(t) & u_y(t) & u_z(t) & u_{\psi}(t) \end{bmatrix}^T
+	\end{aligned}
+\end{equation*}
+
+\end{document}
+

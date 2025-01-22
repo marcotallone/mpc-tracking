@@ -1,0 +1,153 @@
+%┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓%
+%┃                                   CODE                                     ┃%
+%┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛%
+% NOTE: If you use this package independently, you need to define the colors!
+
+\ProvidesPackage{code}[2024/05/18 A package providing nice coding utilities]
+
+% Import required packages  
+\RequirePackage{listings}
+\RequirePackage{float}
+\RequirePackage{newtxtt}
+\RequirePackage{newfloat}
+\RequirePackage[breakable]{tcolorbox}
+\RequirePackage{etoolbox}
+\RequirePackage{pgfkeys}
+\RequirePackage{ifthen}
+\RequirePackage{fontawesome5}
+
+\RequirePackage{settings/codestyles}
+
+%┌────────────────────────────────────────────────────────────────────────────┐%
+%│                               Inline Code                                  │%
+%└────────────────────────────────────────────────────────────────────────────┘%
+% Markdown-style inline code with a colored background
+% // TODO: look at pag. 21 of the tcolorbox manual for inline boxes
+\newcommand{\cc}[1]{
+  \kern-1ex                       % negative space
+  \tcbox[
+    on line,                      % inline
+    colback   = boxcolor,         % background color
+    coltext   = textcolor!60,     % text color
+    colframe  = boxcolor,         % frame color   
+    boxrule   = 0pt,              % frame thickness
+    boxsep    = 0.5pt,            % frame separation
+    top       = 0.5mm,            % top margin
+    bottom    = 0.5mm,            % bottom margin
+    left      = 0.5mm,            % left margin
+    right     = 0.5mm             % right margin
+  ]
+  {\texttt{#1}}                   % code text
+  \kern-1ex                       % negative space
+}
+
+%┌────────────────────────────────────────────────────────────────────────────┐%
+%│                                Code Boxes                                  │%
+%└────────────────────────────────────────────────────────────────────────────┘%
+
+% Optional Arguments for Code Environment
+\tcbset{
+  % Optional Additional Variables:
+  % you can also use built-in ones together
+  % (e.g. title is a built-in option)
+  input/.store in   = \codeInput,
+  output/.store in  = \codeOutput,
+  color/.store in   = \backgroundColor,
+  frame/.store in   = \frameColor,
+  text/.store in    = \textColor,
+  % Default Values
+  input             = defaultInput,
+  output            = defaultOutput,
+  color             = boxcolor,
+  frame             = boxcolor,
+  text              = textcolor,
+}
+
+% Code Environment
+\tcbuselibrary{listings, skins}
+\newtcblisting{code}[2][]{
+  % Initialize Variables -------------------------------------------------------
+  color                 =   boxcolor,
+  frame                 =   boxcolor,
+  text                  =   textcolor,
+  #1,                                         % other options
+  % Title (only if passed as optional argument) --------------------------------
+  coltitle              =   textcolor,                % title color
+  fonttitle             =   \bfseries,                % title font
+  colbacktitle          =   boxcolor!40!background,   % title background color
+  before title          =   {\faIcon{code}\quad},     % title icon
+  attach boxed title to top*,                         % title position
+  boxed title style={                                 % title spacing/style
+    enhanced, 
+    top=1.5mm, 
+    bottom=1.5mm
+  }, 
+  % Listings Options -----------------------------------------------------------
+  enhanced,                                   % enhanced mode
+  listing only,                               % only listing
+  listing options={
+    % Language style -----------------------------------------------------------
+    style               =   #2,               % language (codestyles.sty)
+    % Syntax Highlighting ------------------------------------------------------
+    basicstyle          =   \color{\textColor}\ttfamily\small, % text style
+    commentstyle        =   \color{gray},     % comments
+    keywordstyle        =   \color{red},      % keywords
+    stringstyle         =   \color{azure},    % strings
+    escapeinside        =   {§}{§},           % normal text inside '§' 
+    % Numbers ------------------------------------------------------------------
+    % numbers             =   none,           % line numbers (set by language)
+    numberstyle         =   \color{gray}\ttfamily, % line numbers style
+    numbersep           =   1.5mm,            % line numbers separation
+    % Spaces -------------------------------------------------------------------
+    breakatwhitespace   =   false,            % break at any whitespace
+    breaklines          =   true,             % break lines
+    captionpos          =   b,                % caption position
+    keepspaces          =   false,            % keep spaces
+    showspaces          =   false,            % show spaces
+    showstringspaces    =   false,            % show string spaces
+    showtabs            =   false,            % show tabs 
+    tabsize             =   2,                % tab size
+    % Margins ------------------------------------------------------------------
+    xleftmargin         =   0mm,              % left margin
+    aboveskip           =   -0.5mm,           % top spacing
+    belowskip           =   -0.5mm,           % bottom spacing
+  },
+  colback               =   \backgroundColor, % background color
+  colframe              =   \frameColor,      % frame color
+  boxrule               =   0pt,              % frame thickness
+  arc                   =   3mm,              % corner radius
+  % Input and Output -----------------------------------------------------------
+  subtitle style        =   {                 % INPUT and OUTPUT style
+    colback=boxcolor!70!background,
+    before={\vspace*{-3.2mm}},
+    top=1mm,
+    bottom=1mm,
+		fontupper=\normalfont
+  },
+  before upper={                              % print INPUT and OUTPUT
+    \ifthenelse{\equal{\codeInput}{defaultInput}}{}{
+      \ifstrempty{\codeInput}{}{
+        \tcbsubtitle{
+          \textcolor{gray}{\texttt{INPUT:}} \textcolor{gray}{\codeInput}
+        }
+      } 
+    }
+    \ifthenelse{\equal{\codeOutput}{defaultOutput}}{}{
+      \ifstrempty{\codeOutput}{}{
+        \tcbsubtitle{
+          \textcolor{gray}{\texttt{OUTPUT:}} \textcolor{gray}{\codeOutput}
+        }
+      }
+    }
+  },  
+}
+
+% NOTE: Input and Output can contain math text but it must be protected.
+% Example: 
+%     \begin{code}[input = \protect$\sin(x)$]{Pseudocode}
+%     ...
+%     \end{code}
+% Or you can also just enclose the text in curly braces:
+%     \begin{code}[input = {$\sin(x)$}]{Pseudocode}
+%     ...
+%     \end{code}

@@ -1,0 +1,38 @@
+%┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓%
+%┃                                 CODE STYLES                                ┃%
+%┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛%
+
+\ProvidesPackage{codestyles}[2024/05/18 Language styles for code listings]
+
+% Import required packages
+\RequirePackage{listings}
+\RequirePackage{xcolor}
+
+%┌────────────────────────────────────────────────────────────────────────────┐%
+%│                              Language Styles                               │%
+%└────────────────────────────────────────────────────────────────────────────┘%
+% You can ADD A NEW LANGUAGE by copying and adding a new block below
+
+\lstdefinestyle{Pseudocode}{
+  language=Python,                            % language
+  numbers=left,                               % line numbers position
+  morekeywords={                              % additional keywords
+      function, if, else, return,
+      do, then, elif, end, and, not,
+      downto, to, exchange, each,
+      until, repeat, with
+    },
+  mathescape=true,                            % enable math mode
+  comment=[l]{//},                            % line comment
+}
+
+\lstdefinestyle{Python}{language = Python}
+\lstdefinestyle{C++}{language = C++}
+\lstdefinestyle{C}{language = C}
+\lstdefinestyle{Bash}{language = Bash}
+\lstdefinestyle{Fortran}{language = Fortran}
+\lstdefinestyle{R}{language = R}
+\lstdefinestyle{Java}{language = Java}
+\lstdefinestyle{JavaScript}{language = JavaScript}
+\lstdefinestyle{HTML}{language = HTML}
+\lstdefinestyle{CSS}{language = CSS}
