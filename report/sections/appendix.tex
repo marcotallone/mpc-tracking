@@ -326,11 +326,11 @@ as
 				\left( \mbf{Z}_k - \mbf{Z}_{\text{ref},k} \right)\\
 				&= \mbf{Z}_k^T \mbf{V} \mbf{Z}_k + 2 \left( -
 				\mbf{Z}_{\text{ref},k}^T \mbf{V} \right) \mbf{Z}_k\\
-				&= \mbf{Z}_k^T \mbf{H}_k \mbf{Z}_k + 2 \mbf{f}_k^T \mbf{Z}_k
+				&= \mbf{Z}_k^T \mbf{H}_k \mbf{Z}_k + 2 \tilde{\mbf{f}}_k^T \mbf{Z}_k
 	\end{aligned}
 \end{equation*}
 
-Equivalentrly to the \itt{dense} formulation, state and input constraints are
+Equivalently to the \itt{dense} formulation, state and input constraints are
 also expressed in the compact matrix inequality
 \begin{equation*}
 	\mcal{E}_{\mbf{Z}} \mbf{Z}_k \leq \mcal{F}_{\mbf{Z}}
@@ -380,7 +380,8 @@ The final QP problem resulting from the \itt{sparse} formulation can hence be
 written as:
 \begin{equation}
 	\begin{aligned}
-		\min_{\mbf{Z}_k} \quad & \mbf{Z}_k^T \mbf{V} \mbf{Z}_k + 2 \mbf{f}_k^T
+		\min_{\mbf{Z}_k} \quad & \mbf{Z}_k^T \mbf{V} \mbf{Z}_k + 2
+		\tilde{\mbf{f}}_k^T
 		\mbf{Z}_k\\
 		\text{s.t.} \quad & \mcal{E}_{\mbf{Z}} \mbf{Z}_k \leq \mcal{F}_{\mbf{Z}}\\
 		& \mcal{E}_{\text{eq.}} \mbf{Z}_k = \mcal{F}_{\text{eq.}}

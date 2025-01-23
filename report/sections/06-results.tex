@@ -3,8 +3,99 @@
 
 \begin{document}
 
-\section{Results}\label{sec:results}
+\section{Validation and Results}\label{sec:results}
 
+In order to validate the implemented models and the MPC algorithm, several tests
+have been conducted on non-linear systems previously introduced. All the simulations
+consisted in tracking a reference trajectory with the MPC controller and
+measuring the average error between the reference and the actual state of the
+system.
+
+\subsection{Experimental Parameters}
+
+Fixed values for the models parameters have been set in order to conduct the
+experiments in a controlled environment. For the sake of this project, the
+values here reported are expressed as dimensionless quantities since they do not
+necessarily come from real measurements and they are used only to validate the
+implementation from a computational point of view. However, realistic measurements can eventually be obtained from real-world systems and substituted in the models.\\
+For the Unicycle model, a radius of $r = 0.03$ and a distance
+between the wheels of $L = 0.3$ have been chosen. The Cartesian coordinates of
+the center of mass have then been constrained in the region $[-2, 2] \times [-2,
+2]$, while the input angular velocity of the wheels in the range $[-50, 50]$.\\
+For the Helicopter model, the same values for the parameters reported in the
+original paper~\cite{helicopter} have been used. The same state constrained have
+also been maintained, but the inputs range has been amplified to $[-2, 2]$ to
+account for the absence of the integral states in the model.\\
+For both models, the same sampling time of $T_s = 0.1$ has been used, and no
+limit has been imposed on the heading and yaw angles. Concerning the MPC
+parameters instead, the following prediction horizon lengths and weighting
+states and inputs matrices have been used for the two models:
+\[
+\begin{minipage}{.2\textwidth}
+\end{minipage}%
+\begin{minipage}{.3\textwidth}
+  % \centering
+  $\begin{array}{r@{{}\mathrel{=}{}}l}
+	  N & 10 \\[\jot]
+	  Q & 10^3 \cdot \mbb{I}_{3 \times 3} \\[\jot]
+	  R & \mbb{I}_{2 \times 2}
+  \end{array}$\\
+	\vspace{0.25cm}
+  \text{for the unicycle model}
+\end{minipage}%
+\begin{minipage}{.10\textwidth}
+\quad
+\end{minipage}%
+\begin{minipage}{.3\textwidth}
+  % \centering
+  $\begin{array}{r@{{}\mathrel{=}{}}l}
+	N & 18 \\[\jot] 
+	Q & \text{diag}\left(50, 50, 5, 10, 3, 3, 1, 2\right) \\[\jot]
+	R & 2 \cdot \mbb{I}_{4 \times 4}
+  \end{array}$\\
+  \vspace{0.25cm}
+  \text{for the helicopter model}
+\end{minipage}%
+\]
+
+The two systems have been tested on both the circular trajectory of radius $r_0
+= 0.5$ and the leminscate trajectory with $a = 1$ by sampling $N_{guide} = 100$
+points at regular intervals from each of them.
+
+\subsection{Experimental Setup}
+
+In order to perform controlled and reproducible experiments, the same setup has
+been used for all the simulations. In particular, each test consisted in a full
+revolution around each trajectory by starting from a random initial condition
+chosen within a small neighborhood of the first reference point. Specifically,
+the neighborhood has been defined as the set of points in the state space whose
+Euclidean norm is less than $0.05$ from the first reference point. In order to
+obtain statistically significant results, each test has been repeated $50$
+times for each trajectory and each model.\\
+Throughout each simulation, the Mean Squared Errors (MSE) between both the
+reference state and input 
+and the corresponding values assumed by the system have been computed at each time step and then averaged over
+the entire trajectory. The quality of the tracking for the given simulation has
+then been assessed using the final Root Mean Squared Error (RMSE) as a
+performance metric. In the end, the average RMSE over the $50$ repetitions has
+been computed for each trajectory and each model.\\
+Simulations with the presence of noise have also been conducted in order to
+compare the capabilities of the MPC controller in tracking the reference
+trajectory in the presence of disturbances. In this case, the following process
+noise and measurement noise matrices have been used for all the simulations:
+\begin{equation*}
+	\tilde{\mbf{Q}} = 0.75 \cdot 10^{-3} \cdot \mbb{I}_{n \times n},
+	\quad \text{and} \quad
+	\tilde{\mbf{R}} = 10^{-2} \cdot \mbb{I}_{m \times m}
+\end{equation*}
+
+where $n$ and $m$ are the dimensions of the state and input vectors of the two
+models, respectively. For all the tests involving the EKF, the initial state
+covariance matrix has always been initialized as $\mbf{P}_0 = \mbb{I}_{n \times
+n}$.
+
+\pagebreak
+\subsection{Results}
 
 \end{document}
 

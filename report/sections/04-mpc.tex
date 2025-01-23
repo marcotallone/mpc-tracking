@@ -117,7 +117,7 @@ states and the reference trajectory.
 The matrices $\mbf{Q} \geq 0$ and $\mbf{R} > 0$ are
 the weighting matrices for the state and input errors, respectively.\\
 This general expression of the MPC problem can be then cast into a QP
-problems to be solved efficiently using solvers such as \ttt{MATLAB}
+problems to be solved efficiently using solvers such as \ttt{MATLAB}'s
 \ttt{quadprog} by introducing two different formulations: the \itt{dense} (or
 \itt{explicit}) formulation and the \mbox{\itt{sparse} (or
 \itt{implicit})~formulation}.\\
@@ -125,25 +125,32 @@ The \itt{dense} formulation can be obtained by introducing a vectorized notation
 for the state and input sequences and expressing state and inputs constraints as vectorized inequalities. The complete derivation of the
 \itt{dense} formulation is delayed to Appendix~\ref{app:dense-formulation},
 while here only the final form of the resulting QP problem is reported:
+% \begin{equation}\label{eq:dense-formulation}
+% 	\begin{aligned}
+% 		\min_{\mbf{U}_{k | t}} \quad & \mbf{U}_{k | t}^T \left( \mcal{B}^T
+% 			\mcal{Q} \mcal{B} + \mcal{R} \right) \mbf{U}_{k | t} + 2 \left(
+% 			\mbf{x}_{k | t}^T
+% 	\mcal{A}^T \mcal{Q} \mcal{B} + \mcal{D}^T \mcal{Q} \mcal{B} -
+% \bar{\mbf{X}}_{k | t}^T \mcal{Q} \mcal{B} - \bar{\mbf{U}}_{k | t}^T \mcal{R} \right)
+% \mbf{U}_{k | t}\\
+% 		\text{s.t.} \quad & 
+% 		\begin{bmatrix}
+% 			\mcal{E}_\mbf{u}\\
+% 			\mcal{E}_\mbf{x} \mcal{B}
+% 		\end{bmatrix} \mbf{U}_{k | t} \leq
+% 		\begin{bmatrix}
+% 			\mcal{F}_{\mbf{u}}\\
+% 			\mcal{F}_{\mbf{x}} - \mcal{E}_\mbf{x} \mcal{A} \mbf{x}_{k |
+% 			t} - \mcal{E}_\mbf{x} \mcal{D}
+% 		\end{bmatrix}
+% 		\end{aligned}
+% \end{equation}
 \begin{equation}\label{eq:dense-formulation}
 	\begin{aligned}
-		\min_{\mbf{U}_{k | t}} \quad & \mbf{U}_{k | t}^T \left( \mcal{B}^T
-			\mcal{Q} \mcal{B} + \mcal{R} \right) \mbf{U}_{k | t} + 2 \left(
-			\mbf{x}_{k | t}^T
-	\mcal{A}^T \mcal{Q} \mcal{B} + \mcal{D}^T \mcal{Q} \mcal{B} -
-\bar{\mbf{X}}_{k | t}^T \mcal{Q} \mcal{B} - \bar{\mbf{U}}_{k | t}^T \mcal{R} \right)
-\mbf{U}_{k | t}\\
-		\text{s.t.} \quad & 
-		\begin{bmatrix}
-			\mcal{E}_\mbf{u}\\
-			\mcal{E}_\mbf{x} \mcal{B}
-		\end{bmatrix} \mbf{U}_{k | t} \leq
-		\begin{bmatrix}
-			\mcal{F}_{\mbf{u}}\\
-			\mcal{F}_{\mbf{x}} - \mcal{E}_\mbf{x} \mcal{A} \mbf{x}_{k |
-			t} - \mcal{E}_\mbf{x} \mcal{D}
-		\end{bmatrix}
-		\end{aligned}
+		\min_{\mbf{U}_k} \quad & \mbf{U}_k^T \mbf{H}_k \mbf{U}_k + 2 \mbf{f}_k^T
+		\mbf{U}_k\\
+		\text{s.t.} \quad & \mcal{E} \mbf{U}_k \leq \mcal{F}
+	\end{aligned}
 \end{equation}
 
 Alternatively, a \itt{sparse} formulation can be obtained taking advantage of a
@@ -155,28 +162,37 @@ of the associated matrices.
 	hence the optimization problem generally involves a higher number of
 	decision variables. Once again, while the full derivation of this
 	formulation is reported in Appendix~\ref{app:sparse-formulation}, the final resulting QP problem is the following:
-\begin{equation}\label{sparse-formulation}
+% \begin{equation}\label{sparse-formulation}
+% 	\begin{aligned}
+% 		\min_{\mbf{Z}_{k | t}} \quad & \mbf{Z}_{k | t}^T \mbf{V} \mbf{Z}_{k | t}
+% 		+ 2 \left(- 
+% 		\bar{\mbf{Z}}_{k | t}^T \mbf{V} \right) \mbf{Z}_{k | t}\\
+% 		\text{s.t.} \quad & 
+% 		\begin{bmatrix}
+% 			\mcal{E}_\mbf{x} & \mbf{0}\\
+% 			\mbf{0} & \mcal{E}_\mbf{u}
+% 		\end{bmatrix} \mbf{Z}_{k | t} \leq
+% 		\begin{bmatrix}
+% 			\mcal{F}_{\mbf{u}}\\
+% 			\mcal{F}_{\mbf{x}}
+% 		\end{bmatrix}\\
+% 						  & 
+% 		\begin{bmatrix}
+% 			\mbb{I} - \mcal{A} & -\mcal{B}\\
+% 		\end{bmatrix} \mbf{Z}_{k | t} = \mcal{D} \delta \mbf{x}_{k | t}
+% 		+ \begin{bmatrix}
+% 			\mbb{I} - \mcal{A} & -\mcal{B}\\
+% 		\end{bmatrix} \bar{\mbf{Z}}_{k | t}
+% 		\end{aligned}
+% \end{equation}
+\begin{equation}
 	\begin{aligned}
-		\min_{\mbf{Z}_{k | t}} \quad & \mbf{Z}_{k | t}^T \mbf{V} \mbf{Z}_{k | t}
-		+ 2 \left(- 
-		\bar{\mbf{Z}}_{k | t}^T \mbf{V} \right) \mbf{Z}_{k | t}\\
-		\text{s.t.} \quad & 
-		\begin{bmatrix}
-			\mcal{E}_\mbf{x} & \mbf{0}\\
-			\mbf{0} & \mcal{E}_\mbf{u}
-		\end{bmatrix} \mbf{Z}_{k | t} \leq
-		\begin{bmatrix}
-			\mcal{F}_{\mbf{u}}\\
-			\mcal{F}_{\mbf{x}}
-		\end{bmatrix}\\
-						  & 
-		\begin{bmatrix}
-			\mbb{I} - \mcal{A} & -\mcal{B}\\
-		\end{bmatrix} \mbf{Z}_{k | t} = \mcal{D} \delta \mbf{x}_{k | t}
-		+ \begin{bmatrix}
-			\mbb{I} - \mcal{A} & -\mcal{B}\\
-		\end{bmatrix} \bar{\mbf{Z}}_{k | t}
-		\end{aligned}
+		\min_{\mbf{Z}_k} \quad & \mbf{Z}_k^T \mbf{V} \mbf{Z}_k + 2
+		\tilde{\mbf{f}}_k^T
+		\mbf{Z}_k\\
+		\text{s.t.} \quad & \mcal{E}_{\mbf{Z}} \mbf{Z}_k \leq \mcal{F}_{\mbf{Z}}\\
+		& \mcal{E}_{\text{eq.}} \mbf{Z}_k = \mcal{F}_{\text{eq.}}
+	\end{aligned}
 \end{equation}
 
 Notice that this formulation includes both inequality and equality constraints
