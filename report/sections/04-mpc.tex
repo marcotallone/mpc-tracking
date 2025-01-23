@@ -70,15 +70,20 @@ This can eventually be rewritten as:
 \end{equation}
 
 Using this LTV model, the MPC controller is able to solve an optimization
-problem for each $k^{th}$ time step in the prediction horizon $N$. In particular, the
-result of the optimization will be the optimal input sequence that minimizes the
-cost function in the prediction horizon, from which only the first input will
+problem for each sampling time $t \in \{t_k\}_{k=1}^{N_{guide}}$ in the prediction horizon $N$. The
+result of the optimization will be the optimal input sequence $\mbf{U}^*_{t \to
+t+N | t} = [ \mbf{u}^*_{t | t}, \ldots, \mbf{u}^*_{t+N | t} ]^T$ 
+minimizing the cost function $\mbf{J}$ (eq.~\ref{eq:mpc-problem}), from which only the first input $\mbf{u}^*_{t
+	| t}$ will
 actually be applied. Hence, in successive applications of the algorithm, a
 nominal input sequence for future linearizations can be obtained as the
 remaining part of the optimal input sequence\footnote{With the last input
-duplicated as $N$ nominal inputs are needed.} while the nominal states can be
-obtained by applying the nominal inputs to the non-linear dynamics. For the
-first iteration of the MPC algorithm, the reference input sequence can be used
+duplicated as $N$ nominal inputs are needed.}
+$\bar{\mbf{U}}_{t+1 \to t+N+1 | t+1} = [ \mbf{u}^*_{t+1 | t}, \ldots,
+\mbf{u}^*_{t+N | t}, \mbf{u}^*_{t+N | t} ]^T$ while the nominal states can be
+obtained by applying such inputs to the non-linear dynamics. For the
+first iteration of the MPC algorithm, since no pre-computed optimal sequence is yet
+available, the first reference input sequence can be used
 even if it will result in an inaccurate linearization.
 
 \subsection{MPC Formulations}
@@ -88,7 +93,8 @@ model approximation of the non-linear dynamics is formulated as the optimization
 problem~\ref{eq:mpc-problem}, which is solved at every time instance $t$.
 \begin{equation}\label{eq:mpc-problem}
 	\begin{aligned}
-		\min_{\mbf{U}_{t \to t+N | t}} \quad & \sum_{k=t}^{t+N} \left( \Delta
+		% \min_{\mbf{U}_{t \to t+N | t}} \mcal{J} =
+		\min_{\mbf{U}_{t \to t+N | t}} \quad & \mbf{J} = \sum_{k=t}^{t+N} \left( \Delta
 			\mbf{x}_k^T \mbf{Q} \Delta \mbf{x}_k + \Delta \mbf{u}_k^T \mbf{R}
 			\Delta \mbf{u}_k \right)\\
 		\text{s.t.} \quad & \mbf{x}_{k+1 | t} = \mbf{A}_{d,k | t} \mbf{x}_{k |
@@ -105,14 +111,114 @@ problem~\ref{eq:mpc-problem}, which is solved at every time instance $t$.
 
 Where $\mbf{U}_{t \to t+N | t} = \begin{bmatrix} \mbf{u}_{t | t} & \ldots &
 \mbf{u}_{t+N | t} \end{bmatrix}^T$ is the input sequence to be optimized, while
-$\Delta \mbf{x}_k = \mbf{x}_{k | t} - \bar{\mbf{x}}_{k}$ and $\Delta \mbf{u}_k =
-\mbf{u}_{k | t} - \bar{\mbf{u}}_{k}$ are the differences between the predicted
-states and the reference trajectory. The matrices $\mbf{Q}$ and $\mbf{R}$ are
-the weighting matrices for the state and input errors, respectively.
-This general expression of the MPC problem can be further casted into a QP
-problems in two different formulations: the \itt{dense} formulation and the
-\itt{sparse} formulation.
+$\Delta \mbf{x}_k = \mbf{x}_{k | t} - \mbf{x}_{\text{ref},k | t}$ and $\Delta \mbf{u}_k =
+\mbf{u}_{k | t} - \mbf{u}_{\text{ref},k | t}$ are the differences between the predicted
+states and the reference trajectory. 
+The matrices $\mbf{Q} \geq 0$ and $\mbf{R} > 0$ are
+the weighting matrices for the state and input errors, respectively.\\
+This general expression of the MPC problem can be then cast into a QP
+problems to be solved efficiently using solvers such as \ttt{MATLAB}
+\ttt{quadprog} by introducing two different formulations: the \itt{dense} (or
+\itt{explicit}) formulation and the \mbox{\itt{sparse} (or
+\itt{implicit})~formulation}.\\
+The \itt{dense} formulation can be obtained by introducing a vectorized notation
+for the state and input sequences and expressing state and inputs constraints as vectorized inequalities. The complete derivation of the
+\itt{dense} formulation is delayed to Appendix~\ref{app:dense-formulation},
+while here only the final form of the resulting QP problem is reported:
+\begin{equation}\label{eq:dense-formulation}
+	\begin{aligned}
+		\min_{\mbf{U}_{k | t}} \quad & \mbf{U}_{k | t}^T \left( \mcal{B}^T
+			\mcal{Q} \mcal{B} + \mcal{R} \right) \mbf{U}_{k | t} + 2 \left(
+			\mbf{x}_{k | t}^T
+	\mcal{A}^T \mcal{Q} \mcal{B} + \mcal{D}^T \mcal{Q} \mcal{B} -
+\bar{\mbf{X}}_{k | t}^T \mcal{Q} \mcal{B} - \bar{\mbf{U}}_{k | t}^T \mcal{R} \right)
+\mbf{U}_{k | t}\\
+		\text{s.t.} \quad & 
+		\begin{bmatrix}
+			\mcal{E}_\mbf{u}\\
+			\mcal{E}_\mbf{x} \mcal{B}
+		\end{bmatrix} \mbf{U}_{k | t} \leq
+		\begin{bmatrix}
+			\mcal{F}_{\mbf{u}}\\
+			\mcal{F}_{\mbf{x}} - \mcal{E}_\mbf{x} \mcal{A} \mbf{x}_{k |
+			t} - \mcal{E}_\mbf{x} \mcal{D}
+		\end{bmatrix}
+		\end{aligned}
+\end{equation}
 
+Alternatively, a \itt{sparse} formulation can be obtained taking advantage of a
+similar vectorized notation. This second formulation presents as an easier
+implementation and it's more efficient for solvers that can exploit the sparsity
+of the associated matrices.
+	However, it relies on the introduction of an augmented state vector
+	$\mbf{Z}_k = \begin{bmatrix} \mbf{X}_k^T & \mbf{U}_k^T \end{bmatrix}^T$ and
+	hence the optimization problem generally involves a higher number of
+	decision variables. Once again, while the full derivation of this
+	formulation is reported in Appendix~\ref{app:sparse-formulation}, the final resulting QP problem is the following:
+\begin{equation}\label{sparse-formulation}
+	\begin{aligned}
+		\min_{\mbf{Z}_{k | t}} \quad & \mbf{Z}_{k | t}^T \mbf{V} \mbf{Z}_{k | t}
+		+ 2 \left(- 
+		\bar{\mbf{Z}}_{k | t}^T \mbf{V} \right) \mbf{Z}_{k | t}\\
+		\text{s.t.} \quad & 
+		\begin{bmatrix}
+			\mcal{E}_\mbf{x} & \mbf{0}\\
+			\mbf{0} & \mcal{E}_\mbf{u}
+		\end{bmatrix} \mbf{Z}_{k | t} \leq
+		\begin{bmatrix}
+			\mcal{F}_{\mbf{u}}\\
+			\mcal{F}_{\mbf{x}}
+		\end{bmatrix}\\
+						  & 
+		\begin{bmatrix}
+			\mbb{I} - \mcal{A} & -\mcal{B}\\
+		\end{bmatrix} \mbf{Z}_{k | t} = \mcal{D} \delta \mbf{x}_{k | t}
+		+ \begin{bmatrix}
+			\mbb{I} - \mcal{A} & -\mcal{B}\\
+		\end{bmatrix} \bar{\mbf{Z}}_{k | t}
+		\end{aligned}
+\end{equation}
+
+Notice that this formulation includes both inequality and equality constraints
+on the augmented vectorized state and input sequences used in the optimization
+problem.\\
+The choice between the two formulations depends on the specific application and
+the necessities of the problem at hand. In this project, both formulation have
+been implemented in the MPC algorithm and, for the tests conducted in this work,
+no significant differences in terms of performance and final results have been
+observed.\\
+The pseudocode in Code~\ref{code:mpc} schematically summarizes the
+implemented MPC algorithm by only including the most relevant steps of the
+process.
+
+\begin{codeblock}
+\begin{code}{Pseudocode}{Non-Linear MPC Algorithm with LTV Model}
+$N$ $\leftarrow$ set_horizon()
+$\mbf{x}$ $\leftarrow$ $\mbf{x}_0$													 // Initial conditions
+$\bar{\mbf{U}}_{1} \leftarrow$ $\mbf{U}_{\text{ref}, 1}$
+for k in $\{1, 2, \ldots, T_{end} - N\}$ do			// Main loop
+	$\bar{\mbf{x}}_1 \leftarrow$ $\mbf{x}$
+	$\bar{\mbf{u}}_1, \ldots, \bar{\mbf{u}}_N$ $\leftarrow$ $\bar{\mbf{U}}_{k}$
+	for i in $\{1, \dots, N-1\}$ do				// Prediction horizon loop
+		$\mbf{A}_{i}, \mbf{B}_{i} \leftarrow$ linearize($\bar{\mbf{x}}_{i}, \bar{\mbf{u}}_{i}$)
+		$\mbf{A}_{d,i}, \mbf{B}_{d,i} \leftarrow$ discretize($\mbf{A}_{i}, \mbf{B}_{i}$)
+		$\mcal{A}, \mcal{B}, \mcal{D} \leftarrow$ build_formulation_matrices($\mbf{A}_{d,i}, \mbf{B}_{d,i}$)
+		$\bar{x}_{i+1} \leftarrow$ simulate($\bar{\mbf{x}}_{i},
+		\bar{\mbf{u}}_{i+1}$,$T_s$)
+	end
+	$\mcal{Q}, \mcal{R} \leftarrow$ set_weights()						// Optimization phase
+	$\mcal{E}_{\leq}, \mcal{F}_{\leq}, \mcal{E}_{=}, \mcal{F}_{=} \leftarrow$
+	set_constraints($\mcal{Q}, \mcal{R}$)
+	$\mbf{U}^* \leftarrow$ solve($\mcal{A}, \mcal{B}, \mcal{D}, \mcal{E}_{\leq}, \mcal{F}_{\leq}, \mcal{E}_{=}, \mcal{F}_{=}$)	
+	$\mbf{x} \leftarrow$ simulate($\mbf{x}, \mbf{U}^*_1$,$T_s$)					 // Apply first optimal input
+	$\bar{\mbf{U}}_{k+1} \leftarrow$ $\mbf{U}^*_{[2, 3, \ldots, N, N]}$								// Set next nominal inputs
+end
+\end{code}
+\caption{Main steps of the implemented MPC algorithm. Notice that the algorithm
+	runs up to $T_{end} - N$ since the prediction horizon cannot be applied to
+times beyond this limit.}
+\label{code:mpc}
+\end{codeblock}
 
 \end{document}
 

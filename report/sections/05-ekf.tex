@@ -1,0 +1,106 @@
+\documentclass[../main.tex]{subfiles}
+\graphicspath{{\subfix{../images/}}} % Images path
+
+\begin{document}
+
+\section{Extended Kalman Filter (EKF)}\label{sec:ekf}
+
+The previously introduced MPC algorithm relies on the knowledge of the complete
+state of the system at any given time. However, in many practical applications,
+the complete state of a system cannot always be fully measured. Moreover,
+disturbances and noise can affect the measurements, leading to inaccurate
+predictions and control actions.\\
+To address these issues for the studied non-linear systems, the Extended Kalman
+Filter (EKF) has been implemented. The EKF is the non-linear version of the
+Kalman Filter, which implies linearization around an estimate of the current
+mean and covariance.\\
+To explain the implementation of the EKF in this study, it's assumed that the
+equivalent discrete-time versions of the state equation and the output
+transformation of the implemented non-linear systems are affected by noise as
+follows:
+\begin{equation}
+  \begin{aligned}
+	  \dot{\mbf{x}}_k &= \mbf{f}(\mbf{x}_{k-1}, \mbf{u}_{k-1}) + \mbf{w}_k \\
+	  \mbf{y}_k &= \mbf{g}(\mbf{x}_k) + \mbf{v}_k
+  \end{aligned}
+\end{equation}
+
+Where $\mbf{w}_k$ and $\mbf{v}_k$ are process and observation noises, which
+are both assumed to be zero-mean multivariate Gaussian noises with covariance
+matrices $\tilde{\mbf{Q}}_k$ and $\tilde{\mbf{R}}_k$, respectively.\\
+The function $\mbf{g}(\cdot)$ is instead the output transformation function
+which can be used to compute the predicted measurements $\mbf{y}_k$ from the estimated
+states. In general, the measurements don't correspond to the full state of the
+system, which has to be estimated by introducing a gain matrix $\mbf{K}_k$ that
+is computed at each time step.
+In the experiments conducted for this study, a natural choice for the
+implemented models has been to simulate a measurement of the flat outputs only,
+since the reconstruction of the full state of the system is then guaranteed by the
+previously introduced \itt{differential flatness} property.\\
+To derive the Kalman gain $\mbf{K}_k$, $\mbf{f}$ and $\mbf{g}$
+cannot be applied to the covariance directly. Instead, a matrix of partial
+derivatives (the \itt{Jacobian}) is computed and evaluated at the current
+estimate of the state performing in this way a linearization. Such matrices are then used in the
+classic Kalman Filter equations to compute the desired gain.\\
+The whole process can be divided in two main phases: the \itt{prediction}
+(eq.~\ref{eq:ekf-prediction}), where a first estimate of the state is computed
+as well as its covariance, and the \itt{update} (eq.~\ref{eq:ekf-update}),
+where the information from the measurements is used to correct and refine the state
+estimate and its covariance.
+
+\begin{itemize}
+	\item \bft{Prediction}:
+	\begin{equation}\label{eq:ekf-prediction}
+		\begin{aligned}
+			\hat{\mbf{x}}_{k | k-1} = \mbf{f}(\hat{\mbf{x}}_{k-1 | k-1},
+			\mbf{u}_{k-1}) \quad & \quad \text{Predicted state estimate} \\
+			\mbf{P}_{k | k-1} = \mbf{A}_k \mbf{P}_{k-1 | k-1} \mbf{A}_k^T +
+			\tilde{\mbf{Q}}_{k - 1} \quad & \quad \text{Predicted covariance estimate}
+		\end{aligned}
+	\end{equation}
+
+\item \bft{Update}:
+	\begin{equation}\label{eq:ekf-update}
+		\begin{aligned}
+			\mbf{K}_k = \mbf{P}_{k | k-1} \mbf{C}_k^T \left(
+				\mbf{C}_k \mbf{P}_{k | k-1} \mbf{C}_k^T + \tilde{\mbf{R}}_k
+			\right)^{-1} \quad & \quad \text{Kalman gain} \\
+			\hat{\mbf{x}}_{k | k} = \hat{\mbf{x}}_{k | k-1} + \mbf{K}_k \left(
+								\mbf{y}_k - \mbf{g}(\hat{\mbf{x}}_{k | k-1})
+				\right) \quad & \quad \text{Updated state estimate} \\
+				\mbf{P}_{k | k} = \left( \mbb{I} - \mbf{K}_k \mbf{C}_k \right)
+				\mbf{P}_{k | k-1} \quad & \quad \text{Updated covariance
+				estimate}
+		\end{aligned}
+	\end{equation}
+\end{itemize}
+
+where $\mbf{A}_k$ and $\mbf{C}_k$ are the Jacobians of $\mbf{f}$ and $\mbf{g}$
+respecively computed as:
+\begin{equation*}
+		\mbf{A}_k = \left. \frac{\partial \mbf{f}}{\partial \mbf{x}}
+			\right|_{\hat{\mbf{x}}_{k-1 | k-1}, \mbf{u}_{k}} \quad\quad
+			\text{and} \quad\quad
+		\mbf{C}_k = \left. \frac{\partial \mbf{g}}{\partial \mbf{x}} \right|_{\hat{\mbf{x}}_{k | k-1}}
+\end{equation*}
+
+The state estimate obtained from the EKF process can also be used internally by
+the MPC algorithm. In particular, at each iteration of
+the MPC algorithm, the initial state for the given prediction horizon can be
+estimated by the EKF from the measurements of the flat outputs only, while future states of
+the horizon are predicted using the non-linear dynamics and the previously
+explained MPC process.
+This strategy allows for the inclusion of both process and measurement noise
+only in the first step of each MPC iteration and doesn't propagate such
+uncertainty throughout the remaining prediction horizon. Nevertheless, in the
+presence of noise, this approach resulted in far better input sequences for
+reference tracking than
+the ones obtained by ignoring the disturbances in the MPC algorithm.
+% This strategy allows for the account of both process and measurement
+% noise in the MPC algorithm, even if such uncertainty is then not propagated
+% throughout the prediction horizon. At least, this allows to obtain better input
+% sequences than the ones that would be obtained by ignoring noise and
+% disturbances.\\
+
+\end{document}
+

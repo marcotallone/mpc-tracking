@@ -5,111 +5,444 @@
 
 \section{Appendix}\label{appendix}
 
-\subsection{Descriptors Distribution}\label{app:keypoints-distribution}
+\subsection{Murray Trajectory Generation Method}\label{app:murray}
 
-\begin{figure}[htb]
-  \centering
-  \includegraphics[width=\textwidth]{descriptors_distribution.pdf}
-  \caption{Distribution of keypoints sampled from the train set using the SIFT
-  detector (\itt{blue}) and the dense grid approach (\itt{red}). For the first
-  method, the desired number of keypoints ($500$) has been detected in the
-  majority of the images, while for the second method the number of keypoints
-  per image is concentrated around $1000$ with small differences due to the
-  different sizes and aspect ratios of the images.}\label{fig:keypoints-distribution}
-\end{figure}
+Consider the non-linear system described by the state equation
+$\mbf{x}(t) = \mbf{f}(\mbf{x}(t), \mbf{u}(t))$ and having a defined set of flat outputs
+identified by $\mbf{z}(t)$.
+Given a set of $N_{\text{start}}$ reference values for the flat outputs and their derivatives up to
+order $q$
+\begin{equation*}
+	\{ \mbf{z}(T_1), \dot{\mbf{z}}(T_1), \ldots, \mbf{z}^{(q)}(T_1), \dots,
+		\mbf{z}(T_{N_{\text{start}}}), \dot{\mbf{z}}(T_{N_{\text{start}}}),
+	\ldots, \mbf{z}^{(q)}(T_{N_{\text{start}}}) \},
+\end{equation*}
 
-\subsection{Kernel Density Estimation}\label{app:kernel-density-estimation}
+it's possible to generate a feasible trajectory for the system consisting in a
+possibly larger number $N > N_{\text{start}}$ of reference values by first building
+feasible parametrized trajectories between each pair of consecutive reference values and then
+sampling at the desired rate.\\
+To explain this method, first introduced by \itt{Murray}~\cite{murray},
+consider for simplicity the first two reference values (the process is similarly
+repeated for subsequent pairs). Without loss of generality, assume that
+\begin{equation*}
+	T_1 = 0 \quad \text{and} \quad T_2 = T
+\end{equation*}
 
-The Gaussian density estimator $K_{\sigma}(x)$ is defined as
-\begin{equation}
-  K_{\sigma}(x) = \frac{1}{\sqrt{2\pi}\sigma} \exp\left(-\frac{x^2}{2\sigma^2}\right)
+Hence, the vector $\bar{\mbf{z}}$ of known values for the flat outputs and their derivatives at
+the endpoints of the considered time interval assumes the form
+\begin{equation*}
+	\bar{\mbf{z}} = \begin{bmatrix}
+		\mbf{z}(0) & \dot{\mbf{z}}(0) & \ldots & \mbf{z}^{(q)}(0) & \mbf{z}(T) &
+		\dot{\mbf{z}}(T) & \ldots & \mbf{z}^{(q)}(T)
+	\end{bmatrix}^T
+\end{equation*}
+
+Since $\mbf{z}(t)$ must satisfy these boundary conditions, an analytical
+expression for the flat outputs can be found by parametrizing them as a linear
+combination of a set of $N_{\text{basis}}$ smooth basis functions
+$\mbf{b}_i(t)$:
+\begin{equation*}
+	\mbf{z}(t) = \sum_{i=1}^{N_{\text{basis}}} \alpha_i \mbf{b}_i(t)
+\end{equation*}
+
+where the coefficients $\alpha_i$ are determined by the linear system of
+equations obtained by imposing the boundary conditions on the basis functions
+and the corresponding derivatives up to order $q$:
+\begin{equation*}
+	\begin{bmatrix}
+		\mbf{b}_1(0) & \mbf{b}_2(0) & \ldots & \mbf{b}_{N_{\text{basis}}}(0) \\
+		\dot{\mbf{b}}_1(0) & \dot{\mbf{b}}_2(0) & \ldots & \dot{\mbf{b}}_{N_{\text{basis}}}(0) \\
+		\vdots & \vdots & \ddots & \vdots \\
+		\mbf{b}_1^{(q)}(0) & \mbf{b}_2^{(q)}(0) & \ldots & \mbf{b}_{N_{\text{basis}}}^{(q)}(0) \\
+		\mbf{b}_1(T) & \mbf{b}_2(T) & \ldots & \mbf{b}_{N_{\text{basis}}}(T) \\
+		\dot{\mbf{b}}_1(T) & \dot{\mbf{b}}_2(T) & \ldots & \dot{\mbf{b}}_{N_{\text{basis}}}(T) \\
+		\vdots & \vdots & \ddots & \vdots \\
+		\mbf{b}_1^{(q)}(T) & \mbf{b}_2^{(q)}(T) & \ldots & \mbf{b}_{N_{\text{basis}}}^{(q)}(T)
+	\end{bmatrix}
+	\begin{bmatrix}
+		\alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_{N_{\text{basis}}}
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		\mbf{z}(0) \\ \dot{\mbf{z}}(0) \\ \vdots \\ \mbf{z}^{(q)}(0) \\
+		\mbf{z}(T) \\ \dot{\mbf{z}}(T) \\ \vdots \\ \mbf{z}^{(q)}(T)
+	\end{bmatrix}
+\end{equation*}
+
+As explained by \itt{Murray}~\cite{murray}, we obtain a linear system of the
+form $M\boldsymbol{\alpha} = \bar{\mbf{z}}$. Hence, assuming that $M$ is full column rank, we can
+obtain a (possibly non-unique) solution for $\boldsymbol{\alpha}$ that satisfies the
+trajectory generation requirements.
+In other words, the result is an analytical expression for the flat outputs
+$\mbf{z}(t)$ (and their derivatives up to order $q$) between the given
+endpoints.\\
+This process can then be repeated for each pair of consecutive reference values
+in the initial set to obtain multiple smooth point-to-point expression for the
+flat outputs. Finally, the obtained trajectories can be resampled at the desired
+time intervals and the corresponding values of the flat outputs can be used to
+generate feasible trajectories for the system taking advantage of the
+\itt{differential flatness} property.
+
+\pagebreak
+\subsection{Dense Formulation}\label{app:dense-formulation}
+
+Given an MPC prediction horizon $N$, the \itt{dense} formulation can be obtained by first
+introducing the vectorized notation
+\begin{equation*}
+	\begin{aligned}
+		\mbf{X}_k &= \begin{bmatrix}
+			 \mbf{x}_k^T &  \mbf{x}_{k+1}^T & \ldots & 
+			\mbf{x}_{k+N-1}^T
+		\end{bmatrix}^T\\
+		\mbf{U}_k &= \begin{bmatrix}
+			 \mbf{u}_k^T &  \mbf{u}_{k+1}^T & \ldots & 
+			\mbf{u}_{k+N-1}^T
+		\end{bmatrix}^T
+	\end{aligned}
+\end{equation*}
+
+so that the vector of predicted states satisfies the following equality
+\begin{equation}\label{eq:vectorized-states}
+	\mbf{X}_k = \mcal{A} \mbf{x}_k + \mcal{B} \mbf{U}_k + \mcal{D}	
 \end{equation}
 
-Whereas, given the fact that both visual words and SIFT descriptors are
-$128$-dimensional vectors, the Euclidean distance $D(w_i, x_j)$ between the $i$-th visual word $w_i$ and the $j$-th descriptor $x_j$ can be introduced as
-\begin{equation}
-  D(w_i, x_j) = ||w_i - x_j|| = \sqrt{\sum_{k=1}^{128} (w_{ik} - x_{jk})^2}
-\end{equation}
+where, using the matrices derived from the linear time-varying (LTV)
+approximation of Section~\ref{sec:mpc}, we have:
+\begin{equation*}
+	\begin{aligned}
+	\mcal{A} = \begin{bmatrix}
+		\mbb{I}\\
+		\mbf{A}_{d,k}\\
+		\mbf{A}_{d,k+1} \mbf{A}_{d,k}\\
+		\vdots\\
+		\mbf{A}_{d,k+N-2} \ldots \mbf{A}_{d,k}
+	\end{bmatrix}, 
+	\quad
+	\mcal{B} &= \begin{bmatrix}
+		\mbf{0} & \mbf{0} & \ldots & \mbf{0} & \mbf{0}\\
+		\mbf{B}_{d,k} & \mbf{0} & \ldots & \mbf{0} & \mbf{0}\\
+		\mbf{A}_{d,k+1} \mbf{B}_{d,k} & \mbf{B}_{d,k+1} & \ldots & \mbf{0} & \mbf{0}\\
+		\vdots & \vdots & \ddots & \vdots\\
+		\mbf{A}_{d,k+N-2} \ldots \mbf{A}_{d,k} \mbf{B}_{d,k} & \ldots & \ldots &
+		\mbf{B}_{d,k+N-2} & \mbf{0}
+	\end{bmatrix},\\
+		\text{and}\quad \mcal{D} &= \begin{bmatrix}
+		\mbf{0}\\
+		\mbf{d}_k\\
+		\mbf{A}_{d,k+1} \mbf{d}_k + \mbf{d}_{k+1}\\
+		\mbf{A}_{d,k+2} \mbf{A}_{d,k+1} \mbf{d}_k + \mbf{A}_{d,k+2}
+		\mbf{d}_{k+1} + \mbf{d}_{k+2}\\
+		\vdots
+	\end{bmatrix}
+	\end{aligned}
+\end{equation*}
 
-Hence the soft assignment approach proposed by \itt{Van Gemert et
-al.}~\cite{gemert} relies on the density estimator
+Consequently, by also introducing the large notation for the state $\mcal{Q} =
+\text{diag}(\mbf{Q}, \ldots, \mbf{Q})$ and input $\mcal{R} =
+\text{diag}(\mbf{R}, \ldots, \mbf{R})$ weighting matrices, it is possible
+to rewrite the cost function $\mbf{J}$ of the
+optimization problem~\ref{eq:mpc-problem} as a large matrix equation:
+\begin{equation*}
+	\begin{aligned}
+		\mbf{J} &= \Delta \mbf{X}_k^T \mcal{Q} \Delta \mbf{X}_k + \Delta \mbf{U}_k^T
+	\mcal{R} \Delta \mbf{U}_k\\
+				 & = \left( \mbf{X}_k - \mbf{X}_{\text{ref},k} \right)^T
+				 \mcal{Q} \left( \mbf{X}_k - \mbf{X}_{\text{ref},k} \right) +
+				 \left( \mbf{U}_k - \mbf{U}_{\text{ref},k} \right)^T \mcal{R}
+				 \left( \mbf{U}_k - \mbf{U}_{\text{ref},k} \right)\\
+				 &= \mbf{U}_k^T \left(
+						\mcal{B}^T \mcal{Q} \mcal{B} + \mcal{R}
+					\right) \mbf{U}_k 
+					+ 2 \left(
+						\mbf{x}_k^T \mcal{A}^T \mcal{Q} \mcal{B} 
+						+ \mcal{D}^T \mcal{Q} \mcal{B}
+						- \bar{\mbf{X}}_k^T \mcal{Q} \mcal{B}
+						- \bar{\mbf{U}}_k^T \mcal{R}
+					\right) \mbf{U}_k\\
+				 &= \mbf{U}_k^T \mbf{H}_k \mbf{U}_k + 2 \mbf{f}_k^T \mbf{U}_k
+	\end{aligned}
+\end{equation*}
+
+which is a quadratic function of the input sequence $\mbf{U}_k$ and can hence be
+efficiently solved with solvers such as \ttt{MATLAB}'s \ttt{quadprog} function.
+Moreover, state and input constraints of the form $-\mbf{x}_{\min} \leq
+\mbf{x}_k \leq \mbf{x}_{\max}$ and $-\mbf{u}_{\min} \leq \mbf{u}_k \leq
+\mbf{u}_{\max}$ 
+can be rewritten as
+\begin{equation*}
+	\boldsymbol{\varepsilon} \mbf{x}_k \leq \mbf{f}_{\mbf{x}} = \begin{bmatrix}
+		\mbf{x}_{\max}\\
+		\mbf{x}_{\min}
+	\end{bmatrix}
+	\quad \text{and} \quad
+	\boldsymbol{\varepsilon} \mbf{u}_k \leq \mbf{f}_{\mbf{u}} = \begin{bmatrix}
+		\mbf{u}_{\max}\\
+		\mbf{u}_{\min}
+	\end{bmatrix}
+	\quad \text{with} \quad
+	\boldsymbol{\varepsilon} = \begin{bmatrix}
+		+1\\
+		-1
+	\end{bmatrix}
+\end{equation*}
+
+Hence, by stacking the constraints for all time steps as follows:
+\begin{equation*}
+	\mathcal{E}_{\mbf{x}} = \text{diag}(\boldsymbol{\varepsilon}, \ldots,
+	\boldsymbol{\varepsilon}), 
+	\quad
+	\mcal{F}_{\mbf{x}} = \begin{bmatrix}
+		\mbf{f}_{\mbf{x}}\\
+		\vdots\\
+		\mbf{f}_{\mbf{x}}
+	\end{bmatrix},
+	\quad
+	\mathcal{E}_{\mbf{u}} = \text{diag}(\boldsymbol{\varepsilon}, \ldots,
+	\boldsymbol{\varepsilon}), 
+	\quad
+	\mcal{F}_{\mbf{u}} = \begin{bmatrix}
+		\mbf{f}_{\mbf{u}}\\
+		\vdots\\
+		\mbf{f}_{\mbf{u}}
+	\end{bmatrix}
+\end{equation*}
+
+and using the equality~\ref{eq:vectorized-states}, the constraints can be
+expressed as the compact inequality
+\begin{equation*}
+	\mcal{E} \mbf{U}_k \leq \mcal{F}
+\end{equation*}
+
+where
+\begin{equation*}
+	\mcal{E} = \begin{bmatrix}
+		\mcal{E}_{\mbf{u}}\\
+		\mcal{E}_{\mbf{x}} \mcal{B}
+	\end{bmatrix}
+	\quad \text{and} \quad
+	\mcal{F} = \begin{bmatrix}
+		\mcal{F}_{\mbf{u}}\\
+		\mcal{F}_{\mbf{x}} - \mcal{E}_{\mbf{x}} (\mcal{A} \mbf{x}_k + \mcal{D})
+	\end{bmatrix}
+\end{equation*}
+
+The final QP problem resulting from the \itt{dense} formulation can hence be
+written as:
 \begin{equation}
-  K_{\sigma}(D(w_i, x_j)) = \frac{1}{\sqrt{2\pi}\sigma} \exp\left(-\frac{D(w_i, x_j)^2}{2\sigma^2}\right)
+	\begin{aligned}
+		\min_{\mbf{U}_k} \quad & \mbf{U}_k^T \mbf{H}_k \mbf{U}_k + 2 \mbf{f}_k^T
+		\mbf{U}_k\\
+		\text{s.t.} \quad & \mcal{E} \mbf{U}_k \leq \mcal{F}
+	\end{aligned}
 \end{equation}
 
 \pagebreak
-\subsection{Confusion Matrices}\label{app:confusion-matrices}
+\subsection{Sparse Formulation}\label{app:sparse-formulation}
 
-Here the confusion matrices for all the classifiers are reported. These matrices
-refer to the case in which features have been extracted by a SIFT descriptor
-from keypoints sampled on a dense grid on the images and the input
-representation is the normalized histograms of visual words (\itt{HIST}). This has been done to maintain the results consistent with the ones obtained using the spatial pyramid matching approach and to be able to compare the performances of the different classifiers. However, similar matrices can be computed in the other cases as well.\\
+Given an MPC prediction horizon $N$, the \itt{sparse} formulation can be obtained by first
+introducing the vectorized notation
+\begin{equation*}
+	\begin{aligned}
+		\delta \mbf{X}_k &= \mbf{X}_k - \bar{\mbf{X}}_k = \begin{bmatrix}
+			\delta \mbf{x}_k^T & \delta \mbf{x}_{k+1}^T & \ldots & \delta
+			\mbf{x}_{k+N-1}^T
+		\end{bmatrix}^T\\
+		\delta \mbf{U}_k &= \mbf{U}_k - \bar{\mbf{U}}_k = \begin{bmatrix}
+			\delta \mbf{u}_k^T & \delta \mbf{u}_{k+1}^T & \ldots & \delta
+			\mbf{u}_{k+N-1}^T
+		\end{bmatrix}^T
+	\end{aligned}
+\end{equation*}
 
-\begin{figure}[htb]
-  \centering
-  \includegraphics[width=0.8\textwidth]{1nn_confusion_matrix.pdf}
-  \caption{Confusion matrix for the 1-NN classifier.}\label{fig:confusion-matrix-1nn}
-\end{figure}
+so that the vector of state displacements from the operating points satisfies the
+equality
+\begin{equation}\label{eq:vectorized-states-displacement}
+	\delta \mbf{X}_k = \mcal{A} \delta \mbf{X}_k + \mcal{B} \delta \mbf{U}_k + \mcal{D}	 \delta \mbf{x}_k
+\end{equation}
 
-\begin{figure}[htb]
-  \centering
-  \includegraphics[width=0.8\textwidth]{knn_confusion_matrix.pdf}
-  \caption{Confusion matrix for the k-NN classifier with $k = 5$.}\label{fig:confusion-matrix-knn}
-\end{figure}
+where, using the matrices derived from the linear time-varying (LTV)
+approximation of Section~\ref{sec:mpc}, we have:
+{\fontsize{9}{12}\selectfont
+\begin{equation*}
+	% \begin{aligned}
+	\mcal{A} = \begin{bmatrix}
+		\mbf{0} & \mbf{0} & \ldots & \mbf{0} & \mbf{0}\\
+		\mbf{A}_{d,k} & \mbf{0} & \ldots & \mbf{0} & \mbf{0}\\
+		\mbf{0} & \mbf{A}_{d,k+1} & \ldots & \mbf{0} & \mbf{0}\\
+		\vdots & \vdots & \ddots & \vdots\\
+		\mbf{0} & \mbf{0} & \ldots & \mbf{A}_{d,k+N-1} & \mbf{0}
+	\end{bmatrix}, 
+	\mcal{B} = \begin{bmatrix}
+		\mbf{0} & \mbf{0} & \ldots & \mbf{0} & \mbf{0}\\
+		\mbf{B}_{d,k} & \mbf{0} & \ldots & \mbf{0} & \mbf{0}\\
+		\mbf{0} & \mbf{B}_{d,k+1} & \ldots & \mbf{0} & \mbf{0}\\
+		\vdots & \vdots & \ddots & \vdots\\
+		\mbf{0} & \mbf{0} & \ldots & \mbf{B}_{d,k+N-1} & \mbf{0}
+	\end{bmatrix},
+	\mcal{D} = \begin{bmatrix}
+		\mbb{I}\\
+		\mbf{0}\\
+		\vdots\\
+		\mbf{0}\\
+	\end{bmatrix}
+	% \end{aligned}
+\end{equation*}
+}
 
-\begin{figure}[htb]
-  \centering
-  \includegraphics[width=0.8\textwidth]{svm_rbf_confusion_matrix.pdf}
-  \caption{Confusion matrix for the SVM classifier with RBF kernel.}\label{fig:confusion-matrix-rbf}
-\end{figure}
+The large notation matrices for the state $\mcal{Q} = \text{diag}(\mbf{Q},
+\ldots, \mbf{Q})$ and input $\mcal{R} = \text{diag}(\mbf{R}, \ldots, \mbf{R})$
+weighting matrices are also introduced and joint in the matrix $\mbf{V}$ as
+follows:
+\begin{equation*}
+	\mbf{V} = \begin{bmatrix}
+		\mcal{Q} & \mbf{0}\\
+		\mbf{0} & \mcal{R}
+	\end{bmatrix}
+\end{equation*}
 
-\begin{figure}[htb]
-  \centering
-  \includegraphics[width=0.8\textwidth]{svm_chi2_confusion_matrix.pdf}
-  \caption{Confusion matrix for the SVM classifier with $\chi^2$ kernel.}\label{fig:confusion-matrix-chi2}
-\end{figure}
+Consequently, the cost function $\mbf{J}$ of the optimization
+problem~\ref{eq:mpc-problem} can be rewritten as a quadratic function of the
+augmented state and input variables:
+\begin{equation*}
+	\mbf{Z}_k = \begin{bmatrix}
+		\mbf{X}_k\\
+		\mbf{U}_k
+	\end{bmatrix}
+	\quad \text{and} \quad
+	\mbf{Z_{\text{ref},k}} = \begin{bmatrix}
+		\mbf{X}_{\text{ref},k}\\
+		\mbf{U}_{\text{ref},k}
+	\end{bmatrix}
+\end{equation*}
 
-\begin{figure}[htb]
-  \centering
-  \includegraphics[width=0.8\textwidth]{svm_intersection_confusion_matrix.pdf}
-  \caption{Confusion matrix for the SVM classifier with histogram intersection kernel.}\label{fig:confusion-matrix-intersection}
-\end{figure}
+as
+\begin{equation*}
+	\begin{aligned}
+		\mbf{J} &= \Delta \mbf{X}_k^T \mcal{Q} \Delta \mbf{X}_k + \Delta \mbf{U}_k^T
+	\mcal{R} \Delta \mbf{U}_k\\
+				&= \Delta \mbf{Z}_k^T \mbf{V} \Delta \mbf{Z}_k\\
+				&= \left( \mbf{Z}_k - \mbf{Z}_{\text{ref},k} \right)^T \mbf{V}
+				\left( \mbf{Z}_k - \mbf{Z}_{\text{ref},k} \right)\\
+				&= \mbf{Z}_k^T \mbf{V} \mbf{Z}_k + 2 \left( -
+				\mbf{Z}_{\text{ref},k}^T \mbf{V} \right) \mbf{Z}_k\\
+				&= \mbf{Z}_k^T \mbf{H}_k \mbf{Z}_k + 2 \mbf{f}_k^T \mbf{Z}_k
+	\end{aligned}
+\end{equation*}
 
-\FloatBarrier
+Equivalentrly to the \itt{dense} formulation, state and input constraints are
+also expressed in the compact matrix inequality
+\begin{equation*}
+	\mcal{E}_{\mbf{Z}} \mbf{Z}_k \leq \mcal{F}_{\mbf{Z}}
+\end{equation*}
 
-\begin{figure}[htb]
-  \centering
-  \includegraphics[width=0.8\textwidth]{svm_pyramid_confusion_matrix.pdf}
-  \caption{Confusion matrix for the SVM classifier with spatial pyramid matching
-  approach.}\label{fig:confusion-matrix-pmk}
-\end{figure}
+where
+\begin{equation*}
+	\mcal{E}_{\mbf{Z}} = \begin{bmatrix}
+		\mcal{E}_{\mbf{x}} & \mbf{0}\\
+		\mbf{0} & \mcal{E}_{\mbf{u}}
+	\end{bmatrix}
+	\quad \text{and} \quad
+	\mcal{F}_{\mbf{Z}} = \begin{bmatrix}
+		\mcal{F}_{\mbf{x}}\\
+		\mcal{F}_{\mbf{u}}
+	\end{bmatrix}
+\end{equation*}
+
+and $\mcal{E}_{\mbf{x}}$, $\mcal{E}_{\mbf{u}}$, $\mcal{F}_{\mbf{x}}$ and
+$\mcal{F}_{\mbf{u}}$
+assume the same meaning as in Appendix~\ref{app:dense-formulation}.
+Additionally, equation~\ref{eq:vectorized-states-displacement} implies the
+following equality constraints on the augmented state and input variables:
+\begin{equation*}
+	(~\ref{eq:vectorized-states-displacement}~) 
+	\quad \Longrightarrow \quad
+	\begin{bmatrix}
+		\mbb{I} - \mcal{A} & -\mcal{B}
+	\end{bmatrix}
+	\delta \mbf{Z}_k = \mcal{D} \delta \mbf{x}_k
+	\quad \Longrightarrow \quad
+	\mcal{E}_{\text{eq.}} \mbf{Z}_k = \mcal{F}_{\text{eq.}}
+\end{equation*}
+
+where
+\begin{equation*}
+	\mcal{E}_{\text{eq.}} = \begin{bmatrix}
+		\mbb{I} - \mcal{A} & -\mcal{B}
+	\end{bmatrix}
+	\quad \text{and} \quad
+	\mcal{F}_{\text{eq.}} = \mcal{D} \delta \mbf{x}_k + \begin{bmatrix}
+		\mbb{I} - \mcal{A} & -\mcal{B}
+\end{bmatrix} \bar{\mbf{Z}}_k
+\end{equation*}
+
+The final QP problem resulting from the \itt{sparse} formulation can hence be
+written as:
+\begin{equation}
+	\begin{aligned}
+		\min_{\mbf{Z}_k} \quad & \mbf{Z}_k^T \mbf{V} \mbf{Z}_k + 2 \mbf{f}_k^T
+		\mbf{Z}_k\\
+		\text{s.t.} \quad & \mcal{E}_{\mbf{Z}} \mbf{Z}_k \leq \mcal{F}_{\mbf{Z}}\\
+		& \mcal{E}_{\text{eq.}} \mbf{Z}_k = \mcal{F}_{\text{eq.}}
+	\end{aligned}
+\end{equation}
 
 
-\subsection{Notice on Generative Tools Usage}\label{app:generative-tools}
 
-Generative AI tools have been used as a support for the development of this
-project. In particular, the
-\href{https://en.wikipedia.org/wiki/Microsoft_Copilot}{Copilot \faLink} generative tool
-based on \href{https://en.wikipedia.org/wiki/GPT-4}{OpenAI GPT 4o \faLink} model has
-been used as assistance medium in performing the following tasks:
 
-\begin{itemize}
-	 \item writing documentation and comments in implemented functions by
-		 adhering to the
-		 \href{https://numpydoc.readthedocs.io/en/latest/format.html}{NumPy
-		 Style Guide \faLink}
 
-	\item improving variable naming and code readability 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% \subsection{Notice on Generative Tools Usage}\label{app:generative-tools}
+
+% Generative AI tools have been used as a support for the development of this
+% project. In particular, the
+% \href{https://en.wikipedia.org/wiki/Microsoft_Copilot}{Copilot \faLink} generative tool
+% based on \href{https://en.wikipedia.org/wiki/GPT-4}{OpenAI GPT 4o \faLink} model has
+% been used as assistance medium in performing the following tasks:
+
+% \begin{itemize}
+% 	 \item writing documentation and comments in implemented functions by
+% 		 adhering to the
+% 		 \href{https://numpydoc.readthedocs.io/en/latest/format.html}{NumPy
+% 		 Style Guide \faLink}
+
+% 	\item improving variable naming and code readability 
 	
-	\item minor bug fixing in implemented functions
+% 	\item minor bug fixing in implemented functions
 
-	\item grammar and spelling check both in the repository
-		\ttt{README}~\cite{github} and in this report
+% 	\item grammar and spelling check both in the repository
+% 		\ttt{README}~\cite{github} and in this report
 
-	\item tweaking aesthetic improvements in the plots of this report
+% 	\item tweaking aesthetic improvements in the plots of this report
 
-	\item formatting table of results in this report
-\end{itemize}
+% 	\item formatting table of results in this report
+% \end{itemize}
 
 \end{document}
 

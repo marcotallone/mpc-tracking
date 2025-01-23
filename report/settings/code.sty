@@ -45,6 +45,149 @@
 %│                                Code Boxes                                  │%
 %└────────────────────────────────────────────────────────────────────────────┘%
 
+\lstdefinestyle{Pseudocode}{
+    language=Python,
+    % basicstyle=\color{black}\ttfamily\small,
+	% fontzise 10pt:
+	basicstyle=\color{black}\ttfamily\footnotesize,
+    numberstyle=\color{gray},
+    xleftmargin=5mm,
+    numbers=left,
+    numbersep=4mm,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    morekeywords={function, if, else, return},
+    mathescape=true,
+	  comment=[l]{//},                            % line comment
+	  commentstyle=\color{gray},
+    % escapeinside={(*}{*)} % everithung between (* and *) won't be considered as code
+}
+
+\lstdefinestyle{Python}{
+    language=Python,
+    basicstyle=\color{black}\ttfamily\small,
+    commentstyle=\color{gray},
+    keywordstyle=\color{gitred},
+    stringstyle=\color{gitlightblue},
+    numberstyle=\color{gray},
+    xleftmargin=10mm,
+    numbers=left,
+    numbersep=10mm,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstdefinestyle{Python}{
+    language=Python,
+    basicstyle=\color{black}\ttfamily\small,
+    commentstyle=\color{gray},
+    keywordstyle=\color{gitred},
+    stringstyle=\color{gitlightblue},
+    numberstyle=\color{gray},
+    xleftmargin=10mm,
+    numbers=left,
+    numbersep=10mm,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstdefinestyle{C++}{
+    language=C++,
+    basicstyle=\color{black}\ttfamily\small,
+    commentstyle=\color{gray},
+    keywordstyle=\color{gitred},
+    stringstyle=\color{gitlightblue},
+    numberstyle=\color{gray},
+    xleftmargin=10mm,
+    numbers=left,
+    numbersep=10mm,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstdefinestyle{C}{
+    language=C,
+    basicstyle=\color{black}\ttfamily\small,
+    commentstyle=\color{gray},
+    keywordstyle=\color{gitred},
+    stringstyle=\color{gitlightblue},
+    numberstyle=\color{gray},
+    xleftmargin=10mm,
+    numbers=left,
+    numbersep=10mm,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+
+% Code blocks
+\usepackage{newfloat}
+\DeclareFloatingEnvironment[
+    fileext=loc,
+    listname={List of Codes},
+    name=Code,   % The name that will appear in the caption
+    % placement=H, % H: here, t: top, b: bottom
+    placement=h,
+    within=none,
+]{codeblock}
+
+
+% Code boxes
+\usepackage{tcolorbox}
+\tcbuselibrary{listings, skins}
+\newtcblisting{code}[3][]{
+    enhanced,
+    listing only,
+    listing options={
+		style=#2,
+    aboveskip           =   -0.7mm,           % top spacing
+    belowskip           =   -0.7mm,           % bottom spacing
+	},
+    colback=boxcolor,
+    colframe=boxcolor, % frame color
+    boxrule=0pt,      % frame thickness
+    arc=0mm,          % corner radius,
+    #1
+    title=\small#3,         % title
+    coltitle=black,   % title color
+    fonttitle=\bfseries, % title font
+    attach boxed title to top left={yshift=-0.7mm,xshift=0mm},
+    boxed title style={colback=boxcolor,boxrule=0pt,bottomrule=1pt},
+    underlay unbroken={\fill[boxcolor] (title.north east) rectangle (frame.north east);},
+    underlay unbroken and first={\draw[black,line width=0.5pt] (title.north west)-- ($(title.north west-|frame.east)$);},
+    underlay unbroken and first={\draw[black,line width=0.5pt] (frame.north west)-- (frame.north east);},
+    underlay unbroken and last={\draw[black,line width=0.5pt] (frame.south west)-- (frame.south east);},
+}
+
 % Optional Arguments for Code Environment
 \tcbset{
   % Optional Additional Variables:
@@ -63,91 +206,91 @@
   text              = textcolor,
 }
 
-% Code Environment
-\tcbuselibrary{listings, skins}
-\newtcblisting{code}[2][]{
-  % Initialize Variables -------------------------------------------------------
-  color                 =   boxcolor,
-  frame                 =   boxcolor,
-  text                  =   textcolor,
-  #1,                                         % other options
-  % Title (only if passed as optional argument) --------------------------------
-  coltitle              =   textcolor,                % title color
-  fonttitle             =   \bfseries,                % title font
-  colbacktitle          =   boxcolor!40!background,   % title background color
-  before title          =   {\faIcon{code}\quad},     % title icon
-  attach boxed title to top*,                         % title position
-  boxed title style={                                 % title spacing/style
-    enhanced, 
-    top=1.5mm, 
-    bottom=1.5mm
-  }, 
-  % Listings Options -----------------------------------------------------------
-  enhanced,                                   % enhanced mode
-  listing only,                               % only listing
-  listing options={
-    % Language style -----------------------------------------------------------
-    style               =   #2,               % language (codestyles.sty)
-    % Syntax Highlighting ------------------------------------------------------
-    basicstyle          =   \color{\textColor}\ttfamily\small, % text style
-    commentstyle        =   \color{gray},     % comments
-    keywordstyle        =   \color{red},      % keywords
-    stringstyle         =   \color{azure},    % strings
-    escapeinside        =   {§}{§},           % normal text inside '§' 
-    % Numbers ------------------------------------------------------------------
-    % numbers             =   none,           % line numbers (set by language)
-    numberstyle         =   \color{gray}\ttfamily, % line numbers style
-    numbersep           =   1.5mm,            % line numbers separation
-    % Spaces -------------------------------------------------------------------
-    breakatwhitespace   =   false,            % break at any whitespace
-    breaklines          =   true,             % break lines
-    captionpos          =   b,                % caption position
-    keepspaces          =   false,            % keep spaces
-    showspaces          =   false,            % show spaces
-    showstringspaces    =   false,            % show string spaces
-    showtabs            =   false,            % show tabs 
-    tabsize             =   2,                % tab size
-    % Margins ------------------------------------------------------------------
-    xleftmargin         =   0mm,              % left margin
-    aboveskip           =   -0.5mm,           % top spacing
-    belowskip           =   -0.5mm,           % bottom spacing
-  },
-  colback               =   \backgroundColor, % background color
-  colframe              =   \frameColor,      % frame color
-  boxrule               =   0pt,              % frame thickness
-  arc                   =   3mm,              % corner radius
-  % Input and Output -----------------------------------------------------------
-  subtitle style        =   {                 % INPUT and OUTPUT style
-    colback=boxcolor!70!background,
-    before={\vspace*{-3.2mm}},
-    top=1mm,
-    bottom=1mm,
-		fontupper=\normalfont
-  },
-  before upper={                              % print INPUT and OUTPUT
-    \ifthenelse{\equal{\codeInput}{defaultInput}}{}{
-      \ifstrempty{\codeInput}{}{
-        \tcbsubtitle{
-          \textcolor{gray}{\texttt{INPUT:}} \textcolor{gray}{\codeInput}
-        }
-      } 
-    }
-    \ifthenelse{\equal{\codeOutput}{defaultOutput}}{}{
-      \ifstrempty{\codeOutput}{}{
-        \tcbsubtitle{
-          \textcolor{gray}{\texttt{OUTPUT:}} \textcolor{gray}{\codeOutput}
-        }
-      }
-    }
-  },  
-}
+% % Code Environment
+% \tcbuselibrary{listings, skins}
+% \newtcblisting{code}[2][]{
+%   % Initialize Variables -------------------------------------------------------
+%   color                 =   boxcolor,
+%   frame                 =   boxcolor,
+%   text                  =   textcolor,
+%   #1,                                         % other options
+%   % Title (only if passed as optional argument) --------------------------------
+%   coltitle              =   textcolor,                % title color
+%   fonttitle             =   \bfseries,                % title font
+%   colbacktitle          =   boxcolor!40!background,   % title background color
+%   before title          =   {\faIcon{code}\quad},     % title icon
+%   attach boxed title to top*,                         % title position
+%   boxed title style={                                 % title spacing/style
+%     enhanced, 
+%     top=1.5mm, 
+%     bottom=1.5mm
+%   }, 
+%   % Listings Options -----------------------------------------------------------
+%   enhanced,                                   % enhanced mode
+%   listing only,                               % only listing
+%   listing options={
+%     % Language style -----------------------------------------------------------
+%     style               =   #2,               % language (codestyles.sty)
+%     % Syntax Highlighting ------------------------------------------------------
+%     basicstyle          =   \color{\textColor}\ttfamily\small, % text style
+%     commentstyle        =   \color{gray},     % comments
+%     keywordstyle        =   \color{red},      % keywords
+%     stringstyle         =   \color{azure},    % strings
+%     escapeinside        =   {§}{§},           % normal text inside '§' 
+%     % Numbers ------------------------------------------------------------------
+%     % numbers             =   none,           % line numbers (set by language)
+%     numberstyle         =   \color{gray}\ttfamily, % line numbers style
+%     numbersep           =   1.5mm,            % line numbers separation
+%     % Spaces -------------------------------------------------------------------
+%     breakatwhitespace   =   false,            % break at any whitespace
+%     breaklines          =   true,             % break lines
+%     captionpos          =   b,                % caption position
+%     keepspaces          =   false,            % keep spaces
+%     showspaces          =   false,            % show spaces
+%     showstringspaces    =   false,            % show string spaces
+%     showtabs            =   false,            % show tabs 
+%     tabsize             =   2,                % tab size
+%     % Margins ------------------------------------------------------------------
+%     xleftmargin         =   0mm,              % left margin
+%     aboveskip           =   -0.5mm,           % top spacing
+%     belowskip           =   -0.5mm,           % bottom spacing
+%   },
+%   colback               =   \backgroundColor, % background color
+%   colframe              =   \frameColor,      % frame color
+%   boxrule               =   0pt,              % frame thickness
+%   arc                   =   3mm,              % corner radius
+%   % Input and Output -----------------------------------------------------------
+%   subtitle style        =   {                 % INPUT and OUTPUT style
+%     colback=boxcolor!70!background,
+%     before={\vspace*{-3.2mm}},
+%     top=1mm,
+%     bottom=1mm,
+% 		fontupper=\normalfont
+%   },
+%   before upper={                              % print INPUT and OUTPUT
+%     \ifthenelse{\equal{\codeInput}{defaultInput}}{}{
+%       \ifstrempty{\codeInput}{}{
+%         \tcbsubtitle{
+%           \textcolor{gray}{\texttt{INPUT:}} \textcolor{gray}{\codeInput}
+%         }
+%       } 
+%     }
+%     \ifthenelse{\equal{\codeOutput}{defaultOutput}}{}{
+%       \ifstrempty{\codeOutput}{}{
+%         \tcbsubtitle{
+%           \textcolor{gray}{\texttt{OUTPUT:}} \textcolor{gray}{\codeOutput}
+%         }
+%       }
+%     }
+%   },  
+% }
 
-% NOTE: Input and Output can contain math text but it must be protected.
-% Example: 
-%     \begin{code}[input = \protect$\sin(x)$]{Pseudocode}
-%     ...
-%     \end{code}
-% Or you can also just enclose the text in curly braces:
-%     \begin{code}[input = {$\sin(x)$}]{Pseudocode}
-%     ...
-%     \end{code}
+% % NOTE: Input and Output can contain math text but it must be protected.
+% % Example: 
+% %     \begin{code}[input = \protect$\sin(x)$]{Pseudocode}
+% %     ...
+% %     \end{code}
+% % Or you can also just enclose the text in curly braces:
+% %     \begin{code}[input = {$\sin(x)$}]{Pseudocode}
+% %     ...
+% %     \end{code}
