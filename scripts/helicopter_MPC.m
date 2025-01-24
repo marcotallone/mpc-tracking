@@ -87,7 +87,7 @@ max_start = 0.05;
 % x0 = zeros(model.n,1);            % origin initial state
 % x0 = x_ref(1, :)';                % first reference initial state
 % x0 = [1; 0; pi/4];                  % custom initial state (x, y, theta)
-x0 = x_ref(1, :)' + max_start*randn(8, 1);
+x0 = x_ref(1, :)' + max_start*rand(8, 1);
 N  = 18;                             % prediction horizon
 Q = diag([50, 50, 5, 10, 3, 3, 1, 2]);  % state cost
 R = diag([2, 2, 2, 2]);             % input cost
@@ -96,71 +96,78 @@ formulation = 0;                    % MPC formulation flag
 noise = 0;                          % MPC noise flag
 debug = 0;                          % MPC debug flag
 t = 0:Ts:Tend;                      % vector of time steps
-Nsteps = length(t) - (N+1);         % number of MPC optimization steps
+% Nsteps = length(t) - (N+1);         % number of MPC optimization steps
 
-% Optimization
-mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
-[x, u] = mpc.optimize();
+% % Optimization
+% mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
+% [x, u] = mpc.optimize();
 
 
-% for index = 1:10
+% Add N steps to complete a full loop
+x_ref = [x_ref; x_ref(1:N+1, :)];
+u_ref = [u_ref; u_ref(1:N+1, :)];
+Tend = Tend + (N+1)*Ts;
+Nsteps = length(t);
+
+
+for index = 1:22
+
+    % Set initial condition to a random point around x_ref(1, :) inside the ball of radius max_start
+    x0 = x_ref(1, :)' + max_start*randn(8, 1);
+
+
+    % Optimization
+    mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
+    [x, u] = mpc.optimize();
+
+end
+
+
+% % Plot
 % 
-%     % Set initial condition to a random point around x_ref(1, :) inside the ball of radius max_start
-%     x0 = x_ref(1, :)' + max_start*randn(8, 1);
+% % Main trajectory plot
+% figure(1);
 % 
-% 
-%     % Optimization
-%     mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
-%     [x, u] = mpc.optimize();
-% 
+% % Reference trajectory
+% ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
+% hold on;
+% arrow_length = 0.01;
+% for i = 1:length(x_ref)
+%     x_arrow = arrow_length * cos(x_ref(i, 7));
+%     y_arrow = arrow_length * sin(x_ref(i, 7));
+%     quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
 % end
-
-
-% Plot
-
-% Main trajectory plot
-figure(1);
-
-% Reference trajectory
-ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
-hold on;
-arrow_length = 0.01;
-for i = 1:length(x_ref)
-    x_arrow = arrow_length * cos(x_ref(i, 7));
-    y_arrow = arrow_length * sin(x_ref(i, 7));
-    quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
-end
-legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
-
-% Labels
-title('Trajectory Tracking with MPC (Non-Linear Unicycle System)');
-xlabel('x1'); ylabel('x2');
-grid on;
-axis equal;
-hold on;
-
-%%%%%%%%%%
-% <<<<<<<<
-%%%%%%%%%%
-% Wait for figure
-pause(1);
-
-% Real trajectory
-for i = 1:Nsteps
-    x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
-    x_line.Color(4) = 0.5; % line transparency 50%
-    hold on;
-    x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
-    hold on;
-    quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 7)), arrow_length * sin(x(1:i, 7)), 'AutoScale', 'off', 'Color', 'blue');
-    legend([ref_points, x_points],{'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
-    hold on;
-
-    pause(0.05);
-    if i < Nsteps
-        delete(x_line);
-    end
-end
+% legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
+% 
+% % Labels
+% title('Trajectory Tracking with MPC (Non-Linear Unicycle System)');
+% xlabel('x1'); ylabel('x2');
+% grid on;
+% axis equal;
+% hold on;
+% 
+% %%%%%%%%%%
+% % <<<<<<<<
+% %%%%%%%%%%
+% % Wait for figure
+% pause(1);
+% 
+% % Real trajectory
+% for i = 1:Nsteps
+%     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
+%     x_line.Color(4) = 0.5; % line transparency 50%
+%     hold on;
+%     x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
+%     hold on;
+%     quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 7)), arrow_length * sin(x(1:i, 7)), 'AutoScale', 'off', 'Color', 'blue');
+%     legend([ref_points, x_points],{'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
+%     hold on;
+% 
+%     pause(0.05);
+%     if i < Nsteps
+%         delete(x_line);
+%     end
+% end
 
 
 

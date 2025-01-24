@@ -723,7 +723,8 @@ classdef MPC < handle
 			% ------------------------------------------------------------------------------- cut
 
 			% Just for results
-			fprintf("\nhelicopter, circle, 10, %f, %f", MSE_x, MSE_u);
+            % fprintf("\nunicycle, circle, 10, %f, %f", MSE_x, MSE_u);
+			fprintf("\nhelicopter, leminscate, 18, %f, %f", MSE_x, MSE_u);
 
 			% ------------------------------------------------------------------------------- cut
 

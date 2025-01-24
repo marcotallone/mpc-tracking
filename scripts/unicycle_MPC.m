@@ -25,20 +25,20 @@ model = Unicycle(r, L, Ts, x_constraints, u_constraints, P0, Q_tilde, R_tilde);
 % (comment / uncomment the desired trajectory)
 
 
-% % Circle trajectory
-% N_guide = 100;
-% radius = 0.5;
-% shape = "circle";
-% [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, radius);
-% max_start = 0.05;
-
-
-% Leminscate trajectory
+% Circle trajectory
 N_guide = 100;
-a = 1;
-shape = "leminscate";
-[x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
+radius = 0.5;
+shape = "circle";
+[x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, radius);
 max_start = 0.05;
+
+
+% % Leminscate trajectory
+% N_guide = 100;
+% a = 1;
+% shape = "leminscate";
+% [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
+% max_start = 0.05;
 
 
 % % Arbitrary trajectory
@@ -84,12 +84,19 @@ formulation = 0;                    % MPC formulation flag
 noise = 0;                          % MPC noise flag
 debug = 0;                          % MPC debug flag
 t = 0:Ts:Tend;                      % vector of time steps
-Nsteps = length(t) - (N+1);         % number of MPC optimization steps
+% Nsteps = length(t) - (N+1);         % number of MPC optimization steps
 
-for index = 1:10
+
+% Add N steps to complete a full loop
+x_ref = [x_ref; x_ref(1:N+1, :)];
+u_ref = [u_ref; u_ref(1:N+1, :)];
+Tend = Tend + (N+1)*Ts;
+Nsteps = length(t);
+
+for index = 1:100
 
     % Set initial condition to a random point around x_ref(1, :) inside the ball of radius max_start
-    x0 = x_ref(1, :)' + max_start*randn(3, 1);
+    x0 = x_ref(1, :)' + max_start*rand(3, 1);
 
 
     % Optimization
