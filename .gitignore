@@ -1,11 +1,9 @@
 # Ignore all
 *
 
-# # Ignore all contents inside the datasets directory
-# datasets/*
-
-# Unignore the datasets directory itself
-!datasets/
+# Ignore the Hupiter notebooks and the Jupyter notebook checkpoints
+*.ipynb
+.ipynb_checkpoints
 
 # Unignore all with extensions and Makefiles
 !*.*
