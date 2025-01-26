@@ -1,12 +1,14 @@
 % ┌─────────────────────────────────────────────────────────────────────────┐ 
 % │                  Model Predictive Control (MPC) Class                   │ 
 % └─────────────────────────────────────────────────────────────────────────┘ 
+% by Marco Tallone, 2024
+%
 % Class implementing a Model Predictive Control (MPC) algorithm for 
 % non-linear systems with either dense or sparse formulation.
 %
 % Creation
 % 	Syntax
-% 		obj = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, debug)
+% 		obj = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug)
 % 		obj = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation)
 % 		obj = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview)
 % 		obj = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref)
@@ -297,10 +299,6 @@ classdef MPC < handle
 
 			for i = 1:N - 1
 
-				% % Update model's current reference x, y states
-				% xy_ref = obj.X_REF((i) * n + (1:n));
-				% obj.model.update_references(xy_ref(1), xy_ref(2));
-
 				% Linearize and discretize the system
 				x_bar = obj.x_pred(end - n + 1:end);               	 % linearization states 
 				u_bar = u_pred((i - 1) * m + (1:m));                 % linearization inputs
@@ -385,10 +383,6 @@ classdef MPC < handle
 			obj.Z_BAR = [];
 
 			for i = 1:N - 1
-
-				% % Update model's current reference x, y states
-				% xy_ref = obj.X_REF((i) * n + (1:n));
-				% obj.model.update_references(xy_ref(1), xy_ref(2));
 
 				% Linearize and discretize the system
 				x_bar = obj.x_pred(end - n + 1:end);               	 % linearization states
@@ -723,8 +717,10 @@ classdef MPC < handle
 			% ------------------------------------------------------------------------------- cut
 
 			% Just for results
-            % fprintf("\nunicycle, circle, 10, %f, %f", MSE_x, MSE_u);
-			fprintf("\nhelicopter, leminscate, 18, %f, %f", MSE_x, MSE_u);
+            % fprintf("\nunicycle,circle,10,%f,%f", MSE_x, MSE_u);
+            % fprintf("\nunicycle,leminscate,10,%f,%f", MSE_x, MSE_u);
+            % fprintf("\nhelicopter,circle,18,%f,%f",MSE_x, MSE_u);
+			fprintf("\nhelicopter,leminscate,18,%f,%f",MSE_x,MSE_u);
 
 			% ------------------------------------------------------------------------------- cut
 

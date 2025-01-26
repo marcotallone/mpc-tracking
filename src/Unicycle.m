@@ -1,6 +1,8 @@
 % ┌─────────────────────────────────────────────────────────────────────────┐ 
 % │                             Unicycle Class                              │ 
 % └─────────────────────────────────────────────────────────────────────────┘ 
+% by Marco Tallone, 2024
+%
 % Class modelling unicycle non-linear dynamics
 %
 % Creation
@@ -524,120 +526,6 @@ classdef Unicycle < DynamicalSystem
                 end
             end
 
-            % //TODO: remove batman or cast it as special trjectory filling case
-            % % Batman trajectory
-            % if nargin < 4 && strcmp(shape, 'batman')
-
-            %     % Assert that N_guide is at least 10
-            %     assert(N_guide >= 10, 'The number of guide points must be at least 10 for the Batman trajectory.');
-
-            %     % If N_guide odd add 1 to make it even
-            %     if mod(N_guide, 2) == 1
-            %         N_guide = N_guide + 1;
-            %     end
-
-            %     % Simulation time and guide time steps
-            %     Tend = N_intervals * obj.Ts;
-            %     T_guide = linspace(0, Tend, N_guide);
-
-
-            %     % Period = Tend / pi;
-            %     % cos_t = -8*cos(t/Period);
-            %     cos_t = (16*t/Tend)-8;
-
-            %     % Analytical definition
-            %     % batman_x = (abs(t)/t) * (0.3*abs(t) + 0.2*abs(abs(t)-1) + 2.2*abs(abs(t)-2) ...
-            %     %     - 2.7*abs(abs(t)-3) - 3*abs(abs(t)-5) + 3*abs(abs(t)-7) ...
-            %     %     + 5*sin((pi/4)*(abs(abs(t)-3) - abs(abs(t)-4) + 1)) ...
-            %     %     + (5/4)*(abs(abs(t)-4) - abs(abs(t)-5) - 1)^3 ...
-            %     %     - 5.3*cos(((pi/2) + asin(47/53)) * ((abs(abs(t)-7) - abs(abs(t)-8) - 1)/2)) ...
-            %     %     + 2.8);
-            %     % batman_y = (3/2)*abs(abs(t)-1) - (3/2)*abs(abs(t)-2) - (29/4)*abs(abs(t)-4) ...
-            %     %     + (29/4)*abs(abs(t)-5) + (7/16)*(abs(abs(t)-2) - abs(abs(t)-3) - 1)^4 ...
-            %     %     + 4.5*sin((pi/4)*(abs(abs(t)-3) - abs(abs(t)-4) - 1)) ...
-            %     %     - 3*(sqrt(2)/5) * (abs(abs(abs(t)-5) - abs(abs(t)-7)))^(5/2) ...
-            %     %     + 6.4*sin(((pi/2) + asin(47/53)) * ((abs(abs(t)-7) - abs(abs(t)-8) + 1)/2) + asin(56/64)) ...
-            %     %     + 4.95;
-
-            %     batman_x = (abs(cos_t)/cos_t) * (0.3*abs(cos_t) + 0.2*abs(abs(cos_t)-1) + 2.2*abs(abs(cos_t)-2) ...
-            %         - 2.7*abs(abs(cos_t)-3) - 3*abs(abs(cos_t)-5) + 3*abs(abs(cos_t)-7) ...
-            %         + 5*sin((pi/4)*(abs(abs(cos_t)-3) - abs(abs(cos_t)-4) + 1)) ...
-            %         + (5/4)*(abs(abs(cos_t)-4) - abs(abs(cos_t)-5) - 1)^3 ...
-            %         - 5.3*cos(((pi/2) + asin(47/53)) * ((abs(abs(cos_t)-7) - abs(abs(cos_t)-8) - 1)/2)) ...
-            %         + 2.8);
-            %     batman_y = (3/2)*abs(abs(cos_t)-1) - (3/2)*abs(abs(cos_t)-2) - (29/4)*abs(abs(cos_t)-4) ...
-            %         + (29/4)*abs(abs(cos_t)-5) + (7/16)*(abs(abs(cos_t)-2) - abs(abs(cos_t)-3) - 1)^4 ...
-            %         + 4.5*sin((pi/4)*(abs(abs(cos_t)-3) - abs(abs(cos_t)-4) - 1)) ...
-            %         - 3*(sqrt(2)/5) * (abs(abs(abs(cos_t)-5) - abs(abs(cos_t)-7)))^(5/2) ...
-            %         + 6.4*sin(((pi/2) + asin(47/53)) * ((abs(abs(cos_t)-7) - abs(abs(cos_t)-8) + 1)/2) + asin(56/64)) ...
-            %         + 4.95;
-            %     z = [batman_x, batman_y, atan2(diff(batman_y, t), diff(batman_x, t))];
-            %     dz = diff(z, t);
-
-            %     % Analytical definition of remaining states and inputs
-            %     omega1 = (2*sqrt(dz(1)^2 + dz(2)^2) - obj.L*dz(3))/(2*obj.r); 
-            %     omega2 = (2*sqrt(dz(1)^2 + dz(2)^2) + obj.L*dz(3))/(2*obj.r); 
-                
-            %     x = [z(1), z(2), z(3)];
-            %     u = [omega1, omega2];
-
-            %     % Distribute reference points more uniformly
-            %     % N_head = 6;
-            %     % N_left = (N_guide - N_head)/2;
-            %     % N_right = N_left;
-    
-            %     % l_left = linspace(-8, -2, N_left);
-            %     % l_head = linspace(-2, 2, N_head + 2);
-            %     % l_right = linspace(2, 8, N_right);
-
-            %     % l = unique([l_left, l_head(2:end-1), l_right]);
-
-            %     % Reference trajectory
-            %     obj.x_ref = [];
-            %     obj.u_ref = [];
-            %     for i = 1:N_guide - 1
-            %         % x_t = double(subs(x, t, 1e-6+l(i)));
-                    
-            %         % if i == N_guide-1
-            %         %     u_t = double(subs(u, t, 1e-6+l(i)));
-            %         % else
-
-            %         %     % Compute the average input in [T_guide(i), T_guide(i+1)] between n_samples samples
-            %         %     n_samples = 10;
-            %         %     u_t_average = zeros(1, obj.m);
-            %         %     for j = 1:n_samples
-            %         %         u_t = double(subs(u, t, 1e-6+l(i) + j*(l(i+1) - l(i))/n_samples));
-            %         %         u_t_average = u_t_average + u_t;
-            %         %     end
-            %         %     u_t_average = u_t_average / n_samples;
-
-            %         %     u_t = u_t_average;
-            %         % end
-
-
-            %         x_t = double(subs(x, t, 1e-6+T_guide(i)));
-            %         % u_t = double(subs(u, t, 1e-6+T_guide(i)));
-
-            %         % Compute the average input in [T_guide(i), T_guide(i+1)] between n_samples samples
-            %         n_samples = 10;
-            %         u_t_average = zeros(1, obj.m);
-            %         for j = 1:n_samples
-            %             u_t = double(subs(u, t, 1e-6+T_guide(i) + j*(T_guide(i+1) - T_guide(i))/n_samples));
-            %             u_t_average = u_t_average + u_t;
-            %         end
-            %         u_t_average = u_t_average / n_samples;
-
-            %         u_t = u_t_average;
-
-
-            %         x_t(3) = wrapTo2Pi(x_t(3)); % wrap the angle state
-
-            %         obj.x_ref = [obj.x_ref; x_t];
-            %         obj.u_ref = [obj.u_ref; u_t];
-            %     end
-                
-            % end
-
             % Arbitrary trajectory with Murray generation method
             if nargin < 4 && strcmp(shape, 'arbitrary')
                 error('Please provide a cell array containing {N_points_filling, N_basis, order, Z_guide} for the arbitrary trajectory.');
@@ -686,20 +574,20 @@ classdef Unicycle < DynamicalSystem
                     % Guide points in the interval
                     z_bar = [
                         Z_guide(i, 1:obj.p)';
-                        % ones(obj.p, 1);
+                        % zeros(obj.p, 1);
                         Z_guide(i+1, 1:obj.p)';
-                        % ones(obj.p, 1);
+                        % zeros(obj.p, 1);
                     ];
 
-                    % Check that M is full column rank
-                    % if rank(M) < size(M, 2)
-                    %     disp('Matrix M is not full column rank');
-                    %     disp("Rank of M: ");
-                    %     disp(rank(M));
-                    %     disp("Matrix M: ");
-                    %     disp(M);
-                    %     return;
-                    % end
+                    Check that M is full column rank
+                    if rank(M) < size(M, 2)
+                        disp('Matrix M is not full column rank');
+                        disp("Rank of M: ");
+                        disp(rank(M));
+                        disp("Matrix M: ");
+                        disp(M);
+                        return;
+                    end
 
                     % Solve the system and reshape
                     alpha = M\z_bar;
@@ -761,55 +649,51 @@ classdef Unicycle < DynamicalSystem
             u_ref = obj.u_ref;
         end
 
-        
+        % Tested class ends here -----------------------------
+        % % Test Functions for nicer plots...work in progress...
+        % function obj = initializePlot(obj, x0)
+        %     % Extract initial position
+        %     x = x0(1);
+        %     y = x0(2);
+        %     theta = x0(3);
 
-        function obj = initializePlot(obj, x0)
-            % Extract initial position
-            x = x0(1);
-            y = x0(2);
-            theta = x0(3);
+        %     % Define circle shape
+        %     t = linspace(0, 2*pi, 100); % Circle points
+        %     circle_x = obj.L/2 * cos(t);
+        %     circle_y = obj.L/2 * sin(t);
 
-            % Define circle shape
-            t = linspace(0, 2*pi, 100); % Circle points
-            circle_x = obj.L/2 * cos(t);
-            circle_y = obj.L/2 * sin(t);
+        %     % Plot the unicycle body (circle)
+        %     obj.body = fill(circle_x + x, circle_y + y, 'blue', 'FaceAlpha', 0.5, 'EdgeColor', 'black', 'DisplayName', 'Unicycle');
+        %     hold on;
 
-            % Plot the unicycle body (circle)
-            obj.body = fill(circle_x + x, circle_y + y, 'blue', 'FaceAlpha', 0.5, 'EdgeColor', 'black', 'DisplayName', 'Unicycle');
-            hold on;
-
-            % Plot heading arrow
-            obj.heading = quiver(x, y, obj.L/2 * cos(theta), obj.L/2 * sin(theta), 'blue', 'LineWidth', 1, 'MaxHeadSize', 1.5, 'DisplayName', 'Heading');
+        %     % Plot heading arrow
+        %     obj.heading = quiver(x, y, obj.L/2 * cos(theta), obj.L/2 * sin(theta), 'blue', 'LineWidth', 1, 'MaxHeadSize', 1.5, 'DisplayName', 'Heading');
             
-            % Set axes and legend
-            axis equal;
-            grid on;
-        end
+        %     % Set axes and legend
+        %     axis equal;
+        %     grid on;
+        % end
 
-        function obj = updatePlot(obj, x)
-            % Extract updated position
-            x_pos = x(1);
-            y_pos = x(2);
-            theta = x(3);
+        % function obj = updatePlot(obj, x)
+        %     % Extract updated position
+        %     x_pos = x(1);
+        %     y_pos = x(2);
+        %     theta = x(3);
 
-            % Define updated circle shape
-            t = linspace(0, 2*pi, 100);
-            circle_x = obj.L/2 * cos(t);
-            circle_y = obj.L/2 * sin(t);
+        %     % Define updated circle shape
+        %     t = linspace(0, 2*pi, 100);
+        %     circle_x = obj.L/2 * cos(t);
+        %     circle_y = obj.L/2 * sin(t);
 
-            % Update circle position
-            set(obj.body, 'XData', circle_x + x_pos, 'YData', circle_y + y_pos);
+        %     % Update circle position
+        %     set(obj.body, 'XData', circle_x + x_pos, 'YData', circle_y + y_pos);
 
-            % Update heading arrow
-            set(obj.heading, 'XData', x_pos, 'YData', y_pos, ...
-                'UData', obj.L/2 * cos(theta), 'VData', obj.L/2 * sin(theta));
+        %     % Update heading arrow
+        %     set(obj.heading, 'XData', x_pos, 'YData', y_pos, ...
+        %         'UData', obj.L/2 * cos(theta), 'VData', obj.L/2 * sin(theta));
 
-            drawnow;
-        end
-
-
-
-
+        %     drawnow;
+        % end
 
     end
 end

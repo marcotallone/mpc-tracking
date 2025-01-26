@@ -1,6 +1,8 @@
 % ┌─────────────────────────────────────────────────────────────────────────┐ 
 % │                       Dynamical System Class                            │ 
 % └─────────────────────────────────────────────────────────────────────────┘
+% by Marco Tallone, 2024
+%
 % Abstract class to define dynamical systems
 %
 % Usage
@@ -27,6 +29,8 @@ classdef (Abstract) DynamicalSystem < handle
         y = output(obj, x, u)
         [A_lin, B_lin] = linearize(obj, x_bar, u_bar)
         x_ref_fixed = fix_angles(obj, x, x_ref)
+        x_hat = EKF_estimate(obj, x_hat, u, y)
+        [x_ref, u_ref, Tend] = generate_trajectory(obj, N_guide, shape, extra_params)
     end
    
     methods
@@ -53,12 +57,6 @@ classdef (Abstract) DynamicalSystem < handle
             % Euler discretization
             A_discrete = eye(obj.n) + A * obj.Ts;
             B_discrete = B * obj.Ts;
-
-            % #TODO: Check why exact sampling (below) is not working properly
-            % continuous_sys = ss(A, B, eye(obj.n), zeros(obj.n, obj.m));
-            % discrete_sys = c2d(continuous_sys, obj.Ts);
-            % A_discrete = discrete_sys.A;
-            % B_discrete = discrete_sys.B;
         end
 
         % m-matrix m(t) function for Murray trajectory generation
@@ -72,12 +70,6 @@ classdef (Abstract) DynamicalSystem < handle
                 end
             end
         end
-
-
-
-
-
-        
+  
     end 
-
 end

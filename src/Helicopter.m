@@ -1,6 +1,8 @@
 % ┌─────────────────────────────────────────────────────────────────────────┐ 
 % │                           Helicopter Class                              │ 
 % └─────────────────────────────────────────────────────────────────────────┘ 
+% by Marco Tallone, 2024
+%
 % Class modelling helicopter non-linear dynamics
 %
 % Creation
@@ -584,7 +586,6 @@ classdef Helicopter < DynamicalSystem
 
             % Analytical parametrization
             syms t real;
-            % f_theta = @(t) m_theta * t;
             sym_theta = m_theta*t;
 
             % Circular trajectory
@@ -601,7 +602,6 @@ classdef Helicopter < DynamicalSystem
                 T_guide = linspace(0, Tend, N_guide);
 
                 % Analytical definition
-                % z = [radius * cos(f_theta(t)), radius * sin(f_theta(t)), 0, 0.5 * pi + f_theta(t)];
                 circle_x = radius * cos(sym_theta);
                 circle_y = radius * sin(sym_theta);
                 z = [circle_x, circle_y, 0, atan2(diff(circle_y, t), diff(circle_x, t))];
@@ -651,7 +651,6 @@ classdef Helicopter < DynamicalSystem
                 % Analytical definition
                 lemin_x = (a*sqrt(2)*cos(sym_theta))/(sin(sym_theta)^2 + 1);
                 lemin_y = (a*sqrt(2)*cos(sym_theta)*sin(sym_theta))/(sin(sym_theta)^2 + 1);
-                % z = [lemin_x, lemin_y, 0, atan2(diff(lemin_y, t)/diff(sym_theta, t), diff(lemin_x, t)/diff(sym_theta, t))]; 
                 z = [lemin_x, lemin_y, 0, atan2(diff(lemin_y, t), diff(lemin_x, t))]; 
                 dz = diff(z, t);
                 ddz = diff(dz, t);
@@ -691,77 +690,6 @@ classdef Helicopter < DynamicalSystem
                     obj.u_ref = [obj.u_ref; u_t];
                 end
             end
-
-            % //TODO: remove batman or cast it as special trjectory filling case
-            % % Batman trajectory
-            % if nargin < 4 && strcmp(shape, 'batman')
-
-            %     % Assert that N_guide is at least 10
-            %     assert(N_guide >= 10, 'The number of guide points must be at least 10 for the Batman trajectory.');
-
-            %     % If N_guide odd add 1 to make it even
-            %     if mod(N_guide, 2) == 1
-            %         N_guide = N_guide + 1;
-            %     end
-
-            %     % Simulation time and guide time steps
-            %     Tend = N_intervals * obj.Ts;
-
-            %     % Analytical definition
-            %     batman_x = (abs(t)/t) * (0.3*abs(t) + 0.2*abs(abs(t)-1) + 2.2*abs(abs(t)-2) ...
-            %         - 2.7*abs(abs(t)-3) - 3*abs(abs(t)-5) + 3*abs(abs(t)-7) ...
-            %         + 5*sin((pi/4)*(abs(abs(t)-3) - abs(abs(t)-4) + 1)) ...
-            %         + (5/4)*(abs(abs(t)-4) - abs(abs(t)-5) - 1)^3 ...
-            %         - 5.3*cos(((pi/2) + asin(47/53)) * ((abs(abs(t)-7) - abs(abs(t)-8) - 1)/2)) ...
-            %         + 2.8);
-            %     batman_y = (3/2)*abs(abs(t)-1) - (3/2)*abs(abs(t)-2) - (29/4)*abs(abs(t)-4) ...
-            %         + (29/4)*abs(abs(t)-5) + (7/16)*(abs(abs(t)-2) - abs(abs(t)-3) - 1)^4 ...
-            %         + 4.5*sin((pi/4)*(abs(abs(t)-3) - abs(abs(t)-4) - 1)) ...
-            %         - 3*(sqrt(2)/5) * (abs(abs(abs(t)-5) - abs(abs(t)-7)))^(5/2) ...
-            %         + 6.4*sin(((pi/2) + asin(47/53)) * ((abs(abs(t)-7) - abs(abs(t)-8) + 1)/2) + asin(56/64)) ...
-            %         + 4.95;
-            %     z = [batman_x, batman_y, 0, atan2(diff(batman_y, t), diff(batman_x, t))];
-            %     dz = diff(z, t);
-            %     ddz = diff(dz, t);
-
-            %     % Analytical definition of remaining states and inputs
-            %     dxb = cos(z(4)) * dz(1) + sin(z(4)) * dz(2);
-            %     dyb = -sin(z(4)) * dz(1) + cos(z(4)) * dz(2);
-            %     dzb = dz(3);
-            %     dpsi = dz(4);
-            %     ux = (cos(z(4)) * (ddz(1) - obj.kx * dz(1)) + sin(z(4)) * (ddz(2) - obj.kx * dz(2)) / obj.bx);
-            %     uy = (cos(z(4)) * (ddz(2) - obj.ky * dz(2)) + sin(z(4)) * (-ddz(1) + obj.ky * dz(1)) / obj.by);
-            %     uz = (ddz(3) + obj.g) / obj.bz;
-            %     upsi = (ddz(4) - obj.kpsi * dz(4)) / obj.bpsi;
-
-            %     x = [z(1), z(2), z(3), dxb, dyb, dzb, z(4), dpsi];
-            %     u = [ux, uy, uz, upsi];
-
-            %     % Distribute reference points more uniformly
-            %     N_head = 6;
-            %     N_left = (N_guide - N_head)/2;
-            %     N_right = N_left;
-    
-            %     l_left = linspace(-8, -2, N_left);
-            %     l_head = linspace(-2, 2, N_head + 2);
-            %     l_right = linspace(2, 8, N_right);
-
-            %     l = unique([l_left, l_head(2:end-1), l_right]);
-
-            %     % Reference trajectory
-            %     obj.x_ref = [];
-            %     obj.u_ref = [];
-            %     for i = 1:N_guide - 1
-            %         x_t = double(subs(x, t, 1e-6+l(i)));
-            %         u_t = double(subs(u, t, 1e-6+l(i)));
-
-            %         x_t(7) = wrapTo2Pi(x_t(7)); % wrap the angle state
-
-            %         obj.x_ref = [obj.x_ref; x_t];
-            %         obj.u_ref = [obj.u_ref; u_t];
-            %     end
-                
-            % end
 
             % Arbitrary trajectory with Murray generation method
             if nargin < 4 && strcmp(shape, 'arbitrary')
@@ -811,7 +739,9 @@ classdef Helicopter < DynamicalSystem
                     % Guide points in the interval
                     z_bar = [
                         Z_guide(i, 1:obj.p)';
+                        % zeros(obj.p, 1);
                         Z_guide(i+1, 1:obj.p)';
+                        % zeros(obj.p, 1);
                     ];
 
                     % Check that M is full column rank
