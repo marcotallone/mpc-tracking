@@ -70,18 +70,19 @@ revolution around each trajectory by starting from a random initial condition
 chosen within a small neighborhood of the first reference point. Specifically,
 the neighborhood has been defined as the set of points in the state space whose
 Euclidean norm is less than $0.05$ from the first reference point. In order to
-obtain statistically significant results, each test has been repeated $50$
+obtain statistically significant results, each test has been repeated $100$
 times for each trajectory and each model.\\
 Throughout each simulation, the Mean Squared Errors (MSE) between both the
 reference state and input 
 and the corresponding values assumed by the system have been computed at each time step and then averaged over
 the entire trajectory. The quality of the tracking for the given simulation has
 then been assessed using the final Root Mean Squared Error (RMSE) as a
-performance metric. In the end, the average RMSE over the $50$ repetitions has
+performance metric. In the end, the average RMSE over the $100$ repetitions has
 been computed for each trajectory and each model.\\
 Simulations with the presence of noise have also been conducted in order to
 compare the capabilities of the MPC controller in tracking the reference
-trajectory in the presence of disturbances. In this case, the following process
+trajectory in the presence of disturbances. In this case, only $20$ repetitions
+have been conducted due to the higher computational load and the following process
 noise and measurement noise matrices have been used for all the simulations:
 \begin{equation*}
 	\tilde{\mbf{Q}} = 0.75 \cdot 10^{-3} \cdot \mbb{I}_{n \times n},
@@ -96,6 +97,30 @@ n}$.
 
 \pagebreak
 \subsection{Results}
+% Unicycle Circle
+% State RMSE: 0.0199 +/- 0.0072
+% Input RMSE: 0.2265 +/- 0.0675
+
+% Unicycle Leminscate
+% State RMSE: 0.0298 +/- 0.0020
+% Input RMSE: 0.8573 +/- 0.0230
+
+% Helicopter Circle
+% State RMSE: 0.0335 +/- 0.0126
+% Input RMSE: 0.0962 +/- 0.0113
+
+% Helicopter Leminscate
+% State RMSE: 0.6863 +/- 0.0012
+% Input RMSE: 0.3019 +/- 0.0071
+
+The simulations conducted with the unicycle on the circular trajectory resulted
+in an average RMSE of $0.020 \pm 0.007$ on the state of the model, while the
+average input RMSE was $0.226 \pm 0.067$. On the leminscate trajectory, slightly
+worse (but still satisfactory) results were obtained by recording a state RMSE
+of $0.030 \pm 0.002$ and an input RMSE of $0.857 \pm 0.023$.\\
+The tests conducted with the helicopter model resulted instead in an average
+RMSE of $0.034 \pm 0.013$ and an input RMSE of \dots
+
 
 \end{document}
 
