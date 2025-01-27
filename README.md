@@ -31,7 +31,7 @@ and Extended Kalman Filter (EKF)</h2>
       <tr>
         <td><a href="//TODO:add link"><strong>Presentation</strong></a></td>
         <td><a href="./report/main.pdf"><strong>Report</strong></a></td>
-        <td><a href="./scripts/helicopter_MPC.m"><strong>Usage Example</strong></a></td>
+        <td><a href="./scripts/example.m"><strong>Usage Example</strong></a></td>
       </tr>
     </table>
 </div>
@@ -195,7 +195,7 @@ After these steps the [`Unicycle`](./src/Unicycle.m), [`Helicopter`](./src/Helic
 <!-- USAGE EXAMPLES -->
 ## Usage Examples
 
-The MATLAB scripts in the [`scripts/`](./scripts) folder contain some usage example of the implemented algorithms. In particular the following files can be found with the relative purpose:
+The MATLAB scripts in the [`scripts/`](./scripts) folder contain some usage example of the implemented algorithms. In particular the  [`example.m`](./scripts/example.m) script is a step by step tutorial on how to use the implemented classes and methods for the tracking problem. Additionally, the following files can be found with the relative purpose:
 
 - [`unicycle_simulate.m`](./scripts/unicycle_simulate.m): a script to simulate the unicycle model and visualize its time evolution given a determined input sequence
 - [`unicycle_MPC.m`](./scripts/unicycle_MPC.m): a script to simulate the unicycle model with the implemented MPC algorithm and the posibility to add process and measurement noise
