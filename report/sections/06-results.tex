@@ -59,7 +59,7 @@ states and inputs matrices have been used for the two models:
 \]
 
 The two systems have been tested on both the circular trajectory of radius $r_0
-= 0.5$ and the leminscate trajectory with $a = 1$ by sampling $N_{guide} = 100$
+= 0.5$ and the lemniscate trajectory with $a = 1$ by sampling $N_{guide} = 100$
 points at regular intervals from each of them.
 
 \subsection{Experimental Setup}
@@ -67,7 +67,8 @@ points at regular intervals from each of them.
 In order to perform controlled and reproducible experiments, the same setup has
 been used for all the simulations. In particular, each test consisted in a full
 revolution around each trajectory by starting from a random initial condition
-chosen within a small neighborhood of the first reference point. Specifically,
+chosen within a small neighborhood of the first reference point as shown in
+Figure~\ref{fig:example}. Specifically,
 the neighborhood has been defined as the set of points in the state space whose
 Euclidean norm is less than $0.05$ from the first reference point. In order to
 obtain statistically significant results, each test has been repeated $100$
@@ -97,30 +98,137 @@ n}$.
 
 \pagebreak
 \subsection{Results}
-% Unicycle Circle
-% State RMSE: 0.0199 +/- 0.0072
-% Input RMSE: 0.2265 +/- 0.0675
 
-% Unicycle Leminscate
-% State RMSE: 0.0298 +/- 0.0020
-% Input RMSE: 0.8573 +/- 0.0230
+The results of all the simulations are summarized in Table~\ref{tab:results}.
+All the experimental results have been obtained by running the models on a machine equipped with an Intel\textsuperscript{\textregistered}~Core\textsuperscript{TM}~i7--8565U CPU @ $\SI{4.60}{\giga\hertz}$ and $\SI{8}{\giga\byte}$ of RAM.\\
+
+% NORMAL MEASUREMENTS (100 repetitions)
+
+% Unicycle Circle
+% State RMSE: 0.020 +/- 0.007
+% Input RMSE: 0.227 +/- 0.068
+
+% Unicycle lemniscate
+% State RMSE: 0.030 +/- 0.002
+% Input RMSE: 0.857 +/- 0.023
 
 % Helicopter Circle
-% State RMSE: 0.0335 +/- 0.0126
-% Input RMSE: 0.0962 +/- 0.0113
+% State RMSE: 0.034 +/- 0.013
+% Input RMSE: 0.096 +/- 0.011
 
-% Helicopter Leminscate
-% State RMSE: 0.6863 +/- 0.0012
-% Input RMSE: 0.3019 +/- 0.0071
+% Helicopter lemniscate
+% State RMSE: 0.686 +/- 0.001
+% Input RMSE: 0.302 +/- 0.007
 
-The simulations conducted with the unicycle on the circular trajectory resulted
-in an average RMSE of $0.020 \pm 0.007$ on the state of the model, while the
-average input RMSE was $0.226 \pm 0.067$. On the leminscate trajectory, slightly
-worse (but still satisfactory) results were obtained by recording a state RMSE
-of $0.030 \pm 0.002$ and an input RMSE of $0.857 \pm 0.023$.\\
-The tests conducted with the helicopter model resulted instead in an average
-RMSE of $0.034 \pm 0.013$ and an input RMSE of \dots
 
+
+% MEASUREMENTS WITH NOISE (20 repetitions)
+
+% Unicycle Circle
+% State RMSE: 0.056 +/- 0.015
+% Input RMSE: 0.634 +/- 0.190
+
+% Unicycle lemniscate
+% State RMSE: 0.204 +/- 0.251
+% Input RMSE: 1.037 +/- 0.106
+
+% Helicopter Circle
+% State RMSE: 1.073 +/- 0.329
+% Input RMSE: 0.215 +/- 0.025
+
+% Helicopter lemniscate
+% State RMSE: 1.169 +/- 0.207
+% Input RMSE: 0.569 +/- 0.071
+
+
+\begin{table}[htb]
+  \renewcommand{\arraystretch}{1.3} % Row height
+  \centering
+  \begin{tabular}{|c|c|c|c|}
+
+    % Header (different color)
+    \hline
+    \rowcolor{boxcolor}
+	\textbf{Model} & \textbf{Trajectory} & \textbf{State RMSE} & \textbf{Input
+	RMSE} \\
+
+	% Unicycle
+	\hline
+	\multirow{2}{*}{Unicycle} & Circle & $0.020 \pm 0.007$ & $0.227 \pm 0.068$ \\
+	\cline{2-4}
+	& Lemniscate & $0.030 \pm 0.002$ & $0.857 \pm 0.023$ \\
+	\hline
+
+	% Helicopter
+	\multirow{2}{*}{Helicopter} & Circle & $0.034 \pm 0.013$ & $0.096 \pm 0.011$ \\
+	\cline{2-4}
+	& Lemniscate & $0.686 \pm 0.001$ & $0.302 \pm 0.007$ \\
+	\hline
+
+	% Unicycle with noise
+	\multirow{2}{*}{\parbox{2cm}{Unicycle\\(with noise)}} & Circle & $0.056 \pm
+	0.015$ & $0.634 \pm 0.190$ \\
+	\cline{2-4}
+	& Lemniscate & $0.204 \pm 0.251$ & $1.037 \pm 0.106$ \\
+	\hline
+
+	% Helicopter with noise
+	\multirow{2}{*}{\parbox{2cm}{Helicopter\\(with noise)}} & Circle & $1.073
+	\pm 0.329$ & $0.215 \pm 0.025$ \\
+	\cline{2-4}
+			   & Lemniscate & $1.169 \pm 0.207$ & $0.569 \pm 0.071$ \\
+	\hline
+
+  \end{tabular}
+  \caption{Summary of the experimental results. The values are expressed as the
+	  average RMSE over $100$ repetitions for the normal simulations and $20$
+	  repetitions for the noisy ones. The values are reported with the
+	  standard deviation.}\label{tab:results}
+  \renewcommand{\arraystretch}{1} % Reset row height to default
+\end{table}
+
+Finally, one last experiment has been conducted to study the dependence of the
+tracking accuracy with respect to the prediction horizon length $N$. In this
+case, for values of the prediction horizon ranging from $N = 2$ to $N = 20$, a
+single run over the lemniscate trajectory (\itt{the more challenging one})
+starting from the same randomly set condition has been
+performed for both models. The results are shown in Figure~\ref{fig:horizon}.
+
+\begin{figure}[htb]
+	\centering
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+		\includegraphics[width=\textwidth]{unicycle-horizon.pdf}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+		\includegraphics[width=\textwidth]{helicopter-horizon.pdf}
+    \end{subfigure}
+	\caption{State (\itt{red}) and Input (\itt{blue}) RMSE values for the Unicycle (\itt{left}) and Helicopter
+		(\itt{right}) models over the lemniscate trajectory with different prediction horizon
+lengths.}\label{fig:horizon}
+\end{figure}
+
+In all the conducted experiments no significant difference in results has been
+observed between the adoption of either the \itt{dense} or the \itt{sparse}
+formulation of the MPC problem.
+
+\begin{figure}[htb]
+	\centering
+    \begin{subfigure}[b]{0.40\textwidth}
+        \centering
+		\includegraphics[width=\textwidth]{unicycle-circle.png}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.59\textwidth}
+        \centering
+		\includegraphics[width=\textwidth]{helicopter-lemniscate.png}
+    \end{subfigure}
+	\caption{Example of unicycle lap around the circular trajectory (\itt{left})
+	and helicopter lap around the lemniscate trajectory
+(\itt{right}).}\label{fig:example}
+\end{figure}
 
 \end{document}
 

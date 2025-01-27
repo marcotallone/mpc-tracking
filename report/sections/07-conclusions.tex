@@ -5,6 +5,56 @@
 
 \section{Conclusions}\label{sec:conclusions}
 
+In conclusion, this study has shown the implementation of a Model Predictive
+Control (MPC) algorithm and an Extended Kalman Filter (EKF) to perform reference
+tracking of non-linear dynamical systems in a fast and efficient way.
+The MPC algorithm developed has been successfully tested on both the unicycle
+and the helicopter models, showing the ability to track different reference
+trajectories with high precision, even in the presence of noise and
+disturbances thanks to the addition of the EKF.\\
+From the simulations conducted on the unicycle model, it has been shown that the
+MPC controller is able to track a reference trajectory with good precision
+and the variability of the average RMSE is minimal. In both trajectories the state RMSE is of the order of $10^{-2}$, which comes at
+the cost of a slightly higher (but still acceptable) error on the control input of the order of $10^{-1}$.\\
+Extremely satisfying results
+have also been obtained from the helicopter model on the circular trajectory,
+with average RMSE of $\sim 0.03$ and $\sim 0.09$ for state and input
+respectively that confirm in this way the findings by \itt{Kunz, Huck and
+Summers}~\cite{helicopter}. The helicopter model performed significantly worse
+on the lemniscate trajectory, which is intrinsically more challenging due to the 
+higher number of turns in different directions. Here the errors on the state and
+input are both of the order of $10^{-1}$, meaning that either the penalization
+applied is not sufficient to guarantee correct tracking or that the reference
+input computed for the original non-linear model is too far from the one needed by
+the approximate LTV model internally used in the MPC controller. Further test
+with different penalization matrices might have to be conducted to address this
+issue.\\
+Expectedly, the results obtained from the simulations with the presence of noise
+show a significant increase in the RMSE of the state and input, with 
+higher variability given the increased values of standard deviation. Still,
+recalling that in this case the algorithm uses the EKF 
+only in the first step of the MPC prediction horizon (without propagating any
+uncertainty further), the results are satisfactory and not only show the
+effectiveness of the EKF in estimating the states of the system, but also the
+robustness of the MPC controller under these conditions.\\
+From figure~\ref{fig:horizon} it's also possible to observe the effect of the
+MPC horizon length $N$ on the final measured errors. For the unicycle model, an
+increase in the horizon length leads to a monotone decrease in the state RMSE,
+while the corresponding input RMSE saturates to a constant value.
+This behavior must probably be due to the penalization chosen,
+which clearly weights state errors more than input ones. For the
+helicopter model instead, the measured errors oscillates for low values of the
+prediction horizon, but in this case the result is most probably dependent on
+the particular initial condition chosen for the simulation. However, for higher
+values of the horizon length, ranging from $N=6$ to $N \approx 15$, the errors
+seem to stabilize around a certain value, which is probably the best trade-off
+between the computational load and the tracking performance. Additionally, this
+suggests that for the lemniscate trajectory and the given setup a shorter horizon
+than the one proposed by the original authors ($N=18$) might be more suitable.
+Finally, notice how both state and input RMSE start to increase for $N > 15$. A
+possible explanation for this behavior might be the fact that the MPC controller
+is trying to react too quickly to the future reference points, leading to a
+worse tracking of the closer~ones.
 
 \end{document}
 
