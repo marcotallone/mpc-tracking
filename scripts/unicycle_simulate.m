@@ -110,10 +110,8 @@ grid on;
 axis equal;
 hold on;
 
-% %%%%%%%%%%
-% % <<<<<<<<
-% %%%%%%%%%%
-% % Wait for figure
+% ────────────────────
+% Wait for figure here
 pause(1);
 
 % Real trajectory
@@ -134,23 +132,7 @@ for i = 1:Nsteps
 end
 
 
-% % Plot the unicycle for the first time
-% model = model.initializePlot(x(1, :));
-% 
-% % Real Trajectory
-% for i = 1:Nsteps
-%     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1, 'HandleVisibility', 'off');
-%     model = model.updatePlot(x(i, :));
-%     pause(0.05);
-%     if i < Nsteps
-%         delete(x_line);
-%     end
-% end
-
-
-
-
-% % Plot ─────────────────────────────────────────────────────────────────────────
+% % GIF ──────────────────────────────────────────────────────────────────────────
 % % Main trajectory plot
 % figure(1);
 % filename = 'images/unicycle_simulation.gif'; % Output GIF filename

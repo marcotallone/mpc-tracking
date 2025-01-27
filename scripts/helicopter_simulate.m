@@ -38,18 +38,18 @@ model = Helicopter(parameters, Ts, x_constraints, u_constraints, P0, Q_tilde, R_
 % (comment / uncomment the desired trajectory)
 
 
-% % Circle trajectory
-% N_guide = 100;
-% radius = 0.5;
-% shape = "circle";
-% [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, radius);
-
-
-% Leminscate trajectory
+% Circle trajectory
 N_guide = 100;
-a = 1;
-shape = "leminscate";
-[x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
+radius = 0.5;
+shape = "circle";
+[x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, radius);
+
+
+% % Lemniscate trajectory
+% N_guide = 100;
+% a = 1;
+% shape = "lemniscate";
+% [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
 
 
 % % Arbitrary trajectory
@@ -90,76 +90,13 @@ end
 
 % Plot ─────────────────────────────────────────────────────────────────────────
 
-% % Main trajectory plot
-% figure(1);
-
-% % Reference trajectory
-% ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
-% hold on;
-% arrow_length = 0.01;
-% for i = 1:length(x_ref)
-%     x_arrow = arrow_length * cos(x_ref(i, 3));
-%     y_arrow = arrow_length * sin(x_ref(i, 3));
-%     quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
-% end
-% legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
-
-% % Labels
-% title('Trajectory Simulation for the Unicycle Model');
-% xlabel('x'); ylabel('y');
-% grid on;
-% axis equal;
-% hold on;
-
-% % %%%%%%%%%%
-% % % <<<<<<<<
-% % %%%%%%%%%%
-% % % Wait for figure
-% pause(1);
-
-% % Real trajectory
-% for i = 1:Nsteps
-%     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
-%     x_line.Color(4) = 0.5; % line transparency 50%
-%     hold on;
-%     x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
-%     hold on;
-%     quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 3)), arrow_length * sin(x(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
-%     legend([ref_points, x_points],{'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
-%     hold on;
-
-%     pause(0.05);
-%     if i < Nsteps
-%         delete(x_line);
-%     end
-% end
-
-
-% % Plot the unicycle for the first time
-% model = model.initializePlot(x(1, :));
-
-% % Real Trajectory
-% for i = 1:Nsteps
-%     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1, 'HandleVisibility', 'off');
-%     model = model.updatePlot(x(i, :));
-%     pause(0.05);
-%     if i < Nsteps
-%         delete(x_line);
-%     end
-% end
-
-
-
-
-% Plot ─────────────────────────────────────────────────────────────────────────
 % Main trajectory plot
 figure(1);
-filename = 'images/helicopter_simulation.gif'; % Output GIF filename
 
 % Reference trajectory
 ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
 hold on;
-arrow_length = 0.03;
+arrow_length = 0.01;
 for i = 1:length(x_ref)
     x_arrow = arrow_length * cos(x_ref(i, 3));
     y_arrow = arrow_length * sin(x_ref(i, 3));
@@ -174,13 +111,11 @@ grid on;
 axis equal;
 hold on;
 
-% Capture initial frame for GIF
-frame = getframe(gcf);
-img = frame2im(frame);
-[imind, cm] = rgb2ind(img, 256); 
-imwrite(imind, cm, filename, 'gif', 'Loopcount', inf, 'DelayTime', 0.05);
+% ────────────────────
+% Wait for figure here
+pause(1);
 
-% Real trajectory animation and GIF capture
+% Real trajectory
 for i = 1:Nsteps
     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
     x_line.Color(4) = 0.5; % line transparency 50%
@@ -188,14 +123,8 @@ for i = 1:Nsteps
     x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
     hold on;
     quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 3)), arrow_length * sin(x(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
-    legend([ref_points, x_points], {'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
+    legend([ref_points, x_points],{'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
     hold on;
-
-    % Capture frame for GIF
-    frame = getframe(gcf);
-    img = frame2im(frame);
-    [imind, cm] = rgb2ind(img, 256);
-    imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append', 'DelayTime', 0.05);
 
     pause(0.05);
     if i < Nsteps
@@ -203,3 +132,55 @@ for i = 1:Nsteps
     end
 end
 
+
+% GIF ──────────────────────────────────────────────────────────────────────────
+% % Main trajectory plot
+% figure(1);
+% filename = 'images/helicopter_simulation.gif'; % Output GIF filename
+
+% % Reference trajectory
+% ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
+% hold on;
+% arrow_length = 0.03;
+% for i = 1:length(x_ref)
+%     x_arrow = arrow_length * cos(x_ref(i, 3));
+%     y_arrow = arrow_length * sin(x_ref(i, 3));
+%     quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
+% end
+% legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
+
+% % Labels
+% title('Trajectory Simulation for the Helicopter Model');
+% xlabel('x'); ylabel('y');
+% grid on;
+% axis equal;
+% hold on;
+
+% % Capture initial frame for GIF
+% frame = getframe(gcf);
+% img = frame2im(frame);
+% [imind, cm] = rgb2ind(img, 256); 
+% imwrite(imind, cm, filename, 'gif', 'Loopcount', inf, 'DelayTime', 0.05);
+
+% % Real trajectory animation and GIF capture
+% for i = 1:Nsteps
+%     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
+%     x_line.Color(4) = 0.5; % line transparency 50%
+%     hold on;
+%     x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
+%     hold on;
+%     quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 3)), arrow_length * sin(x(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
+%     legend([ref_points, x_points], {'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
+%     hold on;
+
+%     % Capture frame for GIF
+%     frame = getframe(gcf);
+%     img = frame2im(frame);
+%     [imind, cm] = rgb2ind(img, 256);
+%     imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append', 'DelayTime', 0.05);
+
+%     pause(0.05);
+%     if i < Nsteps
+%         delete(x_line);
+%     end
+% end

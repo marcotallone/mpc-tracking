@@ -2,6 +2,7 @@
 clear all
 clc
 
+
 % Unicycle model parameters ────────────────────────────────────────────────────
 r  = 0.03;                          % wheel radius
 L  = 0.3;                           % distance between wheels
@@ -33,7 +34,7 @@ shape = "circle";
 max_start = 0.05;
 
 
-% % Leminscate trajectory
+% % Lemniscate trajectory
 % N_guide = 100;
 % a = 1;
 % shape = "leminscate";
@@ -42,23 +43,20 @@ max_start = 0.05;
 
 
 % % Arbitrary trajectory
-% N_guide = 9;
+% N_guide = 5;
 % Z_guide = [
-%     1, 1;
-%     2.14, 1.85;
-%     3.4, 1.91;
-%     4.66, 1.41;
-%     6, 1;
-%     7.04, 1.43;
-%     8, 2;
-%     8.92, 2.63;
-%     9.96, 2.37;
+%     1, 0;
+%     0, 1;
+%     -1, 0;
+%     0, -1;
+%     1, 0;
 % ];
-% N_points_filling = 3;
+% N_points_filling = 25;
 % shape = "arbitrary";
 % N_basis = 2;
 % order = 0;
 % [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, {N_points_filling, N_basis, order, Z_guide});
+% max_start = 0.05;
 
 
 % % Multiply periodic references for multiple laps
@@ -70,12 +68,13 @@ max_start = 0.05;
 
 % MPC ──────────────────────────────────────────────────────────────────────────
 
-% MPC parameters
+% Initial condition
 % x0 = zeros(model.n,1);            % origin initial state
 % x0 = x_ref(1, :)';                % first reference initial state
-% x0 = [1; 0; pi/4];                  % custom initial state (x, y, theta)
+% x0 = [1; 0; pi/4];                % custom initial state (x, y, theta)
+x0 = x_ref(1, :)' + max_start*rand(states, 1);  % random initial condition
 
-
+% MPC parameters
 N  = 10;                            % prediction horizon
 Q  = 1e3*eye(model.n);              % state cost
 R  = eye(model.m);                  % input cost
@@ -83,81 +82,74 @@ preview = 1;                        % MPC preview flag
 formulation = 0;                    % MPC formulation flag
 noise = 0;                          % MPC noise flag
 debug = 0;                          % MPC debug flag
-t = 0:Ts:Tend;                      % vector of time steps
-% Nsteps = length(t) - (N+1);         % number of MPC optimization steps
 
-
-% Add N steps to complete a full loop
-x_ref = [x_ref; x_ref(1:N+1, :)];
-u_ref = [u_ref; u_ref(1:N+1, :)];
+% Simulation time and steps
+x_ref = [x_ref; x_ref(1:N+1, :)];   % add N steps to complete a full loop
+u_ref = [u_ref; u_ref(1:N+1, :)];   % add N steps to complete a full loop
 Tend = Tend + (N+1)*Ts;
-Nsteps = length(t);
+t = 0:Ts:Tend;                      % vector of time steps
+Nsteps = length(t) - (N+1);         % number of MPC optimization steps
 
-for index = 1:100
+% Optimization
+mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
+[x, u] = mpc.optimize();
 
-    % Set initial condition to a random point around x_ref(1, :) inside the ball of radius max_start
-    x0 = x_ref(1, :)' + max_start*rand(3, 1);
 
+% Plot
 
-    % Optimization
-    mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, debug);
-    [x, u] = mpc.optimize();
+% Main trajectory plot
+figure(1);
 
+% Reference trajectory
+ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
+hold on;
+arrow_length = 0.01;
+for i = 1:length(x_ref)
+    x_arrow = arrow_length * cos(x_ref(i, 3));
+    y_arrow = arrow_length * sin(x_ref(i, 3));
+    quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
+end
+legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
+
+% Labels
+title('Trajectory Tracking with MPC (Non-Linear Unicycle System)');
+xlabel('x'); ylabel('y');
+grid on;
+axis equal;
+hold on;
+% 
+% % Set plot limits
+% xlim([-0.6, 0.6]);
+% ylim([-0.6, 0.6]);
+% hold on;
+
+% ────────────────────
+% Wait for figure here
+pause(1);
+
+% Real trajectory
+for i = 1:Nsteps
+    x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
+    x_line.Color(4) = 0.5; % line transparency 50%
+    hold on;
+    x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
+    hold on;
+    quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 3)), arrow_length * sin(x(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
+    % target = scatter(x_ref(i, 1), x_ref(i, 2), 20, 'filled', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', 'red');
+    target = scatter(x_ref(i, 1), x_ref(i, 2), 20, 'red', 'filled');
+    hold on;
+    legend([ref_points, x_points, target],{'Reference trajectory', 'Real trajectory', 'Target'}, 'Location', 'northwest');
+    hold on;
+
+    pause(0.05);
+    if i < Nsteps
+        delete(x_line);
+        delete(target);
+    end
 end
 
 
-% % Plot
-% 
-% % Main trajectory plot
-% figure(1);
-% 
-% % Reference trajectory
-% ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
-% hold on;
-% arrow_length = 0.01;
-% for i = 1:length(x_ref)
-%     x_arrow = arrow_length * cos(x_ref(i, 3));
-%     y_arrow = arrow_length * sin(x_ref(i, 3));
-%     quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
-% end
-% legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
-% 
-% % Labels
-% title('Trajectory Tracking with MPC (Non-Linear Unicycle System)');
-% xlabel('x1'); ylabel('x2');
-% grid on;
-% axis equal;
-% hold on;
-% 
-% %%%%%%%%%%
-% % <<<<<<<<
-% %%%%%%%%%%
-% % Wait for figure
-% pause(1);
-% 
-% % Real trajectory
-% for i = 1:Nsteps
-%     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
-%     x_line.Color(4) = 0.5; % line transparency 50%
-%     hold on;
-%     x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
-%     hold on;
-%     quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 3)), arrow_length * sin(x(1:i, 3)), 'AutoScale', 'off', 'Color', 'blue');
-%     legend([ref_points, x_points],{'Reference trajectory', 'Real trajectory'}, 'Location', 'northwest');
-%     hold on;
-% 
-%     pause(0.05);
-%     if i < Nsteps
-%         delete(x_line);
-%     end
-% end
-
-
-
-
-% GIF
-% 
-% % Plot ─────────────────────────────────────────────────────────────────────────
+% % GIF ──────────────────────────────────────────────────────────────────────────
 % % Main trajectory plot
 % figure(1);
 % filename = 'images/unicycle_MPC.gif'; % Output GIF filename
@@ -174,7 +166,7 @@ end
 % legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
 % 
 % % Labels
-% title('Trajectory Simulation for the Unicycle Model');
+% title('Trajectory Tracking with MPC (Non-Linear Unicycle System)');
 % xlabel('x'); ylabel('y');
 % grid on;
 % axis equal;
