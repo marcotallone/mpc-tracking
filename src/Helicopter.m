@@ -770,7 +770,7 @@ classdef Helicopter < DynamicalSystem
 
                         % Evaluate z(t) and derivatives
                         z_t = double(subs(z, x, T_filling(j)))';
-                        z_t(4) = wrapTo2Pi(z_t(4)); % wrap the angle state
+                        % z_t(4) = wrapTo2Pi(z_t(4)); % wrap the angle state
                         dz_t = double(subs(dz, x, T_filling(j)))';
                         ddz_t = double(subs(ddz, x, T_filling(j)))';
 

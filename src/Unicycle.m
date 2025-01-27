@@ -579,7 +579,7 @@ classdef Unicycle < DynamicalSystem
                         % zeros(obj.p, 1);
                     ];
 
-                    Check that M is full column rank
+                    % Check that M is full column rank
                     if rank(M) < size(M, 2)
                         disp('Matrix M is not full column rank');
                         disp("Rank of M: ");
