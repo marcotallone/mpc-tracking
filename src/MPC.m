@@ -700,7 +700,7 @@ classdef MPC < handle
 				wMSE_u = wMSE_u + weighted_u_distance;
 
 				% Display the current iteration results
-				% fprintf("Iteration: %d/%d, ||x - x_ref|| = %f, ||u - u_ref|| = %f\n", k, obj.Nsteps, x_distance, u_distance);
+				fprintf("Iteration: %d/%d, ||x - x_ref|| = %f, ||u - u_ref|| = %f\n", k, obj.Nsteps, x_distance, u_distance);
 			end
 
 			% Display the final Mean Squared Error (MSE) metrics
@@ -708,19 +708,19 @@ classdef MPC < handle
 			MSE_u = MSE_u / obj.Nsteps;
 			wMSE_x = wMSE_x / obj.Nsteps;
 			wMSE_u = wMSE_u / obj.Nsteps;
-			% fprintf("\nFinal Mean Squared Error (MSE) metrics:\n");
-			% fprintf("         State MSE = %f,          Input MSE = %f\n", MSE_x, MSE_u);
-			% fprintf("Weighted State MSE = %f, Weighted Input MSE = %f\n", wMSE_x, wMSE_u);
+			fprintf("\nFinal Mean Squared Error (MSE) metrics:\n");
+			fprintf("         State MSE = %f,          Input MSE = %f\n", MSE_x, MSE_u);
+			fprintf("Weighted State MSE = %f, Weighted Input MSE = %f\n", wMSE_x, wMSE_u);
 
 
 			
 			% ------------------------------------------------------------------------------- cut
 
 			% Just for results
-            % fprintf("\nunicycle,circle,10,%f,%f", MSE_x, MSE_u);
-            % fprintf("\nunicycle,leminscate,10,%f,%f", MSE_x, MSE_u);
+            % fprintf("\nhelicopter,lemniscate,%d,%f,%f", obj.N, MSE_x, MSE_u);
+            % fprintf("\nunicycle,lemniscate,10,%f,%f", MSE_x, MSE_u);
             % fprintf("\nhelicopter,circle,18,%f,%f",MSE_x, MSE_u);
-			fprintf("\nhelicopter,leminscate,18,%f,%f",MSE_x,MSE_u);
+			% fprintf("\nhelicopter,lemniscate,18,%f,%f",MSE_x,MSE_u);
 
 			% ------------------------------------------------------------------------------- cut
 

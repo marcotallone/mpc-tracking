@@ -399,7 +399,7 @@ classdef Unicycle < DynamicalSystem
             %   Generate a reference trajectory for the unicycle model
             %   Possible trajectories are:
             %       - circle: circular trajectory
-            %       - leminscate: leminscate (infinity) trajectory
+            %       - lemniscate: lemniscate (infinity) trajectory
             %       - arbitrary: arbitrary trajectory given a set of guide points
             %
             % Syntax
@@ -412,13 +412,13 @@ classdef Unicycle < DynamicalSystem
             %       character vector
             %       The ppssible shapes are:
             %           - circle: circular trajectory
-            %           - leminscate: leminscate (infinity) trajectory
+            %           - lemniscate: lemniscate (infinity) trajectory
             %           - arbitrary: arbitrary trajectory given a set of guide points
             %   extra_params - Extra parameters for the trajectory generation
             %       real scalar or cell array
             %       The extra parameters depend on the shape:
             %           - circle: radius of the circle trajectory
-            %           - leminscate: parameter 'a' of the leminscate trajectory
+            %           - lemniscate: parameter 'a' of the lemniscate trajectory
             %           - arbitrary: cell array containing {N_points_filling, N_basis, order, Z_guide}
             %
             % Output Arguments
@@ -478,10 +478,10 @@ classdef Unicycle < DynamicalSystem
                 end
             end
 
-            % Leminscate trajectory
-            if nargin < 4 && strcmp(shape, 'leminscate')
-                error('Please provide the a parameter of the leminscate trajectory');
-            elseif nargin == 4 && strcmp(shape, 'leminscate')
+            % Lemniscate trajectory
+            if nargin < 4 && strcmp(shape, 'lemniscate')
+                error('Please provide the a parameter of the lemniscate trajectory');
+            elseif nargin == 4 && strcmp(shape, 'lemniscate')
 
                 % Set a parameter
                 assert(isscalar(extra_params), 'The extra parameter a must be a scalar value.');
