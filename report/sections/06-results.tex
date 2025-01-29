@@ -14,19 +14,16 @@ system.
 \subsection{Experimental Parameters}
 
 Fixed values for the models parameters have been set in order to conduct the
-experiments in a controlled environment. For the sake of this project, the
-values here reported are expressed as dimensionless quantities since they do not
-necessarily come from real measurements and they are used only to validate the
-implementation from a computational point of view. However, realistic measurements can eventually be obtained from real-world systems and substituted in the models.\\
-For the Unicycle model, a radius of $r = 0.03$ and a distance
-between the wheels of $L = 0.3$ have been chosen. The Cartesian coordinates of
-the center of mass have then been constrained in the region $[-2, 2] \times [-2,
-2]$, while the input angular velocity of the wheels in the range $[-50, 50]$.\\
-For the Helicopter model, the same values for the parameters reported in the
-original paper~\cite{helicopter} have been used. The same state constrained have
+experiments in a controlled environment. 
+These do not come from real measurements and are only used to validate the
+implementation from a computational point of view. However, realistic values can be obtained from real-world systems and substituted in the models.\\
+For the Unicycle model, a radius of $r = \SI{0.03}{\meter}$ and a distance
+between the wheels of $L = \SI{0.3}{\meter}$ have been chosen. The Cartesian coordinates of the center of mass have then been constrained in the region $[-2, 2] \,\text{m} \times [-2, 2] \, \text{m}$, while the input angular velocity of the wheels in the range $[-50, 50] \, \nicefrac{\text{rad}}{\text{s}}$.\\
+For the Helicopter model, the parameters values  reported in the
+original paper~\cite{helicopter} have been used. The same state constraints have
 also been maintained, but the inputs range has been amplified to $[-2, 2]$ to
-account for the absence of the integral states in the model.\\
-For both models, the same sampling time of $T_s = 0.1$ has been used, and no
+account for the absence of the augmented integral states.\\
+For both models, the same sampling time of $T_s = \SI{0.1}{\second}$ has been used, and no
 limit has been imposed on the heading and yaw angles. Concerning the MPC
 parameters instead, the following prediction horizon lengths and weighting
 states and inputs matrices have been used for the two models:
@@ -59,14 +56,13 @@ states and inputs matrices have been used for the two models:
 \]
 
 The two systems have been tested on both the circular trajectory of radius $r_0
-= 0.5$ and the lemniscate trajectory with $a = 1$ by sampling $N_{guide} = 100$
-points at regular intervals from each of them.
+= \SI{0.5}{\meter}$ and the lemniscate trajectory with $a = \SI{1}{\meter}$ by sampling $N_{guide} = 100$ points at regular intervals from each of them.
 
-\subsection{Experimental Setup}
+\subsection{Experimental Setup}\label{sec:setup}
 
 In order to perform controlled and reproducible experiments, the same setup has
 been used for all the simulations. In particular, each test consisted in a full
-revolution around each trajectory by starting from a random initial condition
+revolution around each trajectory, starting from a random initial condition
 chosen within a small neighborhood of the first reference point as shown in
 Figure~\ref{fig:example}. Specifically,
 the neighborhood has been defined as the set of points in the state space whose
@@ -101,45 +97,6 @@ n}$.
 
 The results of all the simulations are summarized in Table~\ref{tab:results}.
 All the experimental results have been obtained by running the models on a machine equipped with an Intel\textsuperscript{\textregistered}~Core\textsuperscript{TM}~i7--8565U CPU @ $\SI{4.60}{\giga\hertz}$ and $\SI{8}{\giga\byte}$ of RAM.\\
-
-% NORMAL MEASUREMENTS (100 repetitions)
-
-% Unicycle Circle
-% State RMSE: 0.020 +/- 0.007
-% Input RMSE: 0.227 +/- 0.068
-
-% Unicycle lemniscate
-% State RMSE: 0.030 +/- 0.002
-% Input RMSE: 0.857 +/- 0.023
-
-% Helicopter Circle
-% State RMSE: 0.034 +/- 0.013
-% Input RMSE: 0.096 +/- 0.011
-
-% Helicopter lemniscate
-% State RMSE: 0.686 +/- 0.001
-% Input RMSE: 0.302 +/- 0.007
-
-
-
-% MEASUREMENTS WITH NOISE (20 repetitions)
-
-% Unicycle Circle
-% State RMSE: 0.056 +/- 0.015
-% Input RMSE: 0.634 +/- 0.190
-
-% Unicycle lemniscate
-% State RMSE: 0.204 +/- 0.251
-% Input RMSE: 1.037 +/- 0.106
-
-% Helicopter Circle
-% State RMSE: 1.073 +/- 0.329
-% Input RMSE: 0.215 +/- 0.025
-
-% Helicopter lemniscate
-% State RMSE: 1.169 +/- 0.207
-% Input RMSE: 0.569 +/- 0.071
-
 
 \begin{table}[htb]
   \renewcommand{\arraystretch}{1.3} % Row height
@@ -190,9 +147,12 @@ All the experimental results have been obtained by running the models on a machi
 Finally, one last experiment has been conducted to study the dependence of the
 tracking accuracy with respect to the prediction horizon length $N$. In this
 case, for values of the prediction horizon ranging from $N = 2$ to $N = 20$, a
-single run over the lemniscate trajectory (\itt{the more challenging one})
-starting from the same randomly set condition has been
-performed for both models. The results are shown in Figure~\ref{fig:horizon}.
+series of $10$ runs over the circular trajectory have been conducted starting
+each time from a random initial condition as explained in previous
+Section~\ref{sec:setup}.
+The trends of the average state and input RMSE values for the two models are
+shown in Figure~\ref{fig:horizon}, where the associated shaded areas represent
+the standard deviations over the $10$ repetitions.
 
 \begin{figure}[htb]
 	\centering
@@ -206,11 +166,12 @@ performed for both models. The results are shown in Figure~\ref{fig:horizon}.
 		\includegraphics[width=\textwidth]{helicopter-horizon.pdf}
     \end{subfigure}
 	\caption{State (\itt{red}) and Input (\itt{blue}) RMSE values for the Unicycle (\itt{left}) and Helicopter
-		(\itt{right}) models over the lemniscate trajectory with different prediction horizon
+		(\itt{right}) models over the circular trajectory with different prediction horizon
 lengths.}\label{fig:horizon}
 \end{figure}
 
-In all the conducted experiments no significant difference in results has been
+It's important to notice that in all the conducted experiments no significant
+difference, neither in results nor in time performances, has been
 observed between the adoption of either the \itt{dense} or the \itt{sparse}
 formulation of the MPC problem.
 
