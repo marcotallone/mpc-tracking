@@ -22,6 +22,9 @@ and Extended Kalman Filter (EKF)</h2>
 <h4 align="center">SDIC Master Degree, University of Trieste (UniTS)</h4>
 <h4 align="center">2024-2025</h4>
 
+  <!-- Insert gif image herew -->
+  <img src="./images/unicycle_MPC.gif" alt="Image" width="700"/>
+
   <p align="center">
     Implementation of a non-linear Model Predictive Control (MPC) algorithm for reference traking<br>
     with the addition of an Extended Kalman Filter (EKF) for state estimation and robustness to noise.
