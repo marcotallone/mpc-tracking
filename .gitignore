@@ -12,6 +12,9 @@
 # Unignore all dirs
 !*/
 
+# Unignore the docs/ directory
+!docs/
+
 \#*
 .#*
 *~
