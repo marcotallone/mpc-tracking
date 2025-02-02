@@ -1,0 +1,154 @@
+/* Presentation Stylesheet Styles */
+
+
+/* Colors */
+:root {
+	--primary: #185B8C;
+	--accent: #9F491C;
+	--background: #B6B7BB;
+	--dark: #3A3A40;
+}
+
+
+/* General RevealJS Settings Overriding */
+.slides>section{ /*use all available space*/
+    width: 100%;
+    height: 100%;
+}
+
+section {
+	display: flex !important;
+	flex-direction: column;
+	top: unset !important;
+	height: 100vh;
+	width: 100vh;
+}
+
+.katex { /*math font size*/
+	font-size: 1.5em; 
+	font-size: 1em !important;
+}
+
+.code { /*code font size*/
+	font-size: 0.8em !important;
+}
+
+
+/* Main Title Slide */
+.main-title-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-top: 100px;
+}
+
+.main-title-logo {
+	height: 100px; 
+	background: transparent;
+}
+
+.main-title-image {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.main-title-image-item {
+	text-align: center;
+	margin-right: 100px;
+}
+
+.main-title-image-item:last-child {
+	margin-right: 0;
+}
+
+
+/* Sections Titles Slides */
+.center-container {
+	display: flex;
+	justify-content: center !important;
+	align-items: center !important;
+	width: 100%;
+	height: 75%;
+}
+
+.section-title { 
+	position: absolute;
+	z-index:500;
+	text-align: left;
+}
+
+
+/* Slides Content */
+.slide-title { 
+	position: absolute;
+	padding: 10px 20px 0px 0px; 
+	top: 5%;
+	left: 0%;
+	z-index:500;
+	text-align: left;
+}
+
+.slide-body {
+	width: 100%;
+	position: relative;
+	top: 15%;
+	text-align: left;
+	font-size: 0.8em;
+	padding: auto;
+	/* transform: translate(0%, -50%); */
+	/* height: 75%; */
+	/* margin: auto; */
+	/* background-color: red; */
+}
+
+
+/* Boxes and Containers */
+.cbox {
+	background-color: var(--background);
+	border-radius: 5px;
+	padding: 20px 30px 5px 30px;
+	text-align: left;
+	color: black;
+	font-size: 0.8em;
+	width: 95%;
+}
+
+.cbox i {
+	font-style: italic;
+}
+
+.cbox b {
+	font-weight: bold;
+}
+
+.multi-column{
+  display: flex;
+}
+
+.column {
+  flex: 1;
+}
+
+/* References */
+.references {
+	list-style-type: none !important;
+	counter-reset: reference-counter;
+}
+
+.references li {
+	counter-increment: reference-counter;
+	position: relative;
+	padding-left: 50px;
+	font-size: 0.9em;
+}
+
+.references li i {
+	font-style: italic;
+}
+
+.references li::before {
+	content: "[" counter(reference-counter) "]";
+	position: absolute;
+	left: 0;
+}

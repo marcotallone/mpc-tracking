@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+
+
+	<!-- Head ---------------------------------------------------------------->
+	<head>
+
+		<!-- Metadata -->
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0,
+					maximum-scale=1.0, user-scalable=no">
+		<title>MPC Tracking</title>
+		<meta name="description" content="Non-linear Reference Tracking via
+					Model Predictive Control and Extended Kalman Filter">
+		<meta name="author" content="Marco Tallone">
+
+		<!-- Style Settings -->
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/personal.css" id="theme">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+
+		<!-- Personal CSS Styling -->
+		<link rel="stylesheet" href="style.css" />
+
+	</head>
+
+
+	<!-- Body ---------------------------------------------------------------->
+	<body>
+
+		<!-- Start of slides -->
+		<div class="reveal">
+		<div class="slides">
+
+		<!-- Slide 1: Title -------------------------------------------------->
+		<section 
+			 data-background-video="./images/topographic-background.mp4"
+			 data-background-video-loop 
+			 data-background-video-muted 
+			 data-background-opacity="1"
+			 data-state="hide-menubar hide-menu"
+		>
+
+			<!-- Main Title -->
+			<div class="main-title-container">
+				<h1>Non-linear Reference Tracking<br>
+					via Model Predictive Control (MPC)<br>
+					and Extended Kalman Filter (EKF)</h1>
+			</div>
+
+			<!-- Subtitle -->
+			<p style="margin-bottom: 0px; font-size: 0.8em;">
+				Exam Project<br> 
+				Modelling and Control of Cyber-Physical Systems II<br>
+				SDIC Master Degree, University of Trieste (UniTS)
+			</p>
+
+			<!-- Author and Date -->
+			<p style="margin-bottom: 0px; font-size: 0.8em;">
+				Marco Tallone<br>
+				February 2025
+			</p>
+
+			<!-- Logos -->
+			<div class="main-title-image">
+				<div class="main-title-image-item">
+					<img src="./images/sdic-logo.png" height="150px" />
+				</div>
+				<div class="main-title-image-item">
+					<img src="./images/units-blue.png" height="150px" />
+				</div>
+			</div>
+
+		</section>
+
+		<!-- Slide 2: Objectives and ToC ------------------------------------->
+		<section data-state="hide-menubar hide-menu"
+				 data-background-color="var(--primary)">
+
+			<h1 class="slide-title">Introduction</h1>
+
+			<br>
+
+			<div class="slide-body">
+
+				<h2>Objectives</h2>
+				<p>
+				<ul>
+					<li>Implement a Model Predictive Controller (MPC) for
+						non-linear systems</li>
+					<li>Implement an Extended Kalman Filter (EKF) for 
+						state estimation</li>
+					<li>Reproduce results by 
+						<i>Kunz, Huck and Summers</i> [<a href="#ref1">1</a>]
+						on a miniature helicopter
+					</li>
+				</ul>
+				</p>
+
+				<br>
+
+				<h2 style="margin-bottom: 0px;">Table of Contents</h2>
+				<!-- <small> -->
+				<ol>
+					<li>Non-Linear Models</li>
+					<li>Trajectory Generation Mehtods</li>
+					<li>MPC Problem Formulation</li>
+					<li>Extended Kalman Filter</li>
+					<li>Validation and Results</li>
+				</ol>
+				<!-- </small> -->
+			</div>
+			
+		</section>
+
+		<!-- Section: Models ------------------------------------------------->
+		<section data-name="Non-Linear Models">
+
+			<section data-background-color="var(--primary)">
+				<div class="center-container">
+					<h1 style="font-size: 2em;">Non-Linear Models</h1>
+				</div>
+			</section>
+
+		<!-- Slide 3: Non-linear Models -------------------------------------->
+		<section data-transition="slide">
+			<h1 class="slide-title">Non-Linear Models</h1>
+
+			<div class="slide-body">
+
+				<div class="multi-column">
+
+					<!-- Unicycle -->
+					<div class="column" 
+						 style="width: 30%; 
+								border-right: 1px solid var(--primary); 
+								padding-right: 10px;
+								margin-right: 10px;
+					">
+						<h2 style="text-align: center;">Unicycle Model</h2>
+						<p>
+						\[
+						\begin{cases}
+						\dot{x} = \frac{r}{2} (\omega_1 + \omega_2) \cos(\theta)\\
+						\dot{y} = \frac{r}{2} (\omega_1 + \omega_2) \sin(\theta)\\
+						\dot{\theta} = \frac{r}{L} (\omega_1 - \omega_2)
+						\end{cases}
+						\]
+						</p>
+						<p style="font-size: 0.8em;">
+						State: $ \mathbf{x}(t) = \begin{bmatrix} x(t) & y(t) & \theta(t) \end{bmatrix}^T $
+						<br>
+						Input: $ \mathbf{u}(t) = \begin{bmatrix} \omega_1(t) & \omega_2(t) \end{bmatrix}^T $    
+						</p>
+						<img src="./images/unicycle-model.png" style="width: 80%;">
+
+					</div>
+
+					<!-- Helicopter -->
+					<div class="column;" style="width: 69%;">
+						<h2 style="text-align: center;">Helicopter Model</h2>
+						<p>
+						\[
+						\begin{cases}
+						\dot{x}_I = cos(\psi) \dot{x}_B - sin(\psi) \dot{y}_B\\
+						\dot{y}_I = sin(\psi) \dot{x}_B + cos(\psi) \dot{y}_B\\
+						\dot{z}_I = \dot{z}_B\\
+						\ddot{x}_B = b_x u_x + k_x \dot{x}_B + \dot{\psi} \dot{y}_B\\
+						\ddot{y}_B = b_y u_y + k_y \dot{y}_B - \dot{\psi} \dot{x}_B\\
+						\dot{z}_B = b_z u_z - g\\
+						\dot{\psi} = \dot{\psi}\\
+						\ddot{\psi} = b_{\psi} u_{\psi} + k_{\psi} \dot{\psi}
+						\end{cases}
+						\]
+						</p>
+						<p style="font-size: 0.8em;">
+						State: $ \mathbf{x}(t) = \begin{bmatrix} x_I(t) & y_I(t) & z_I(t) & \dot{x}_B(t) & \dot{y}_B(t) & \dot{z}_B(t) & \psi(t) & \dot{\psi}(t) \end{bmatrix}^T $
+						<br>
+						Input: $ \mathbf{u}(t) = \begin{bmatrix} u_x(t) & u_y(t) &
+						u_z(t) & u_{\psi}(t) \end{bmatrix}^T $
+						</p>
+					</div>
+
+				<!-- TODO: maybe add code implementation with animations and for -->
+				<!-- helicopter also assumptions with warning box -->
+
+			</div>
+			
+		</section>
+
+		</section>
+
+		<!-- Section: Trajectory Generation ---------------------------------->
+		<section data-name="Trajectory Generation">
+
+			<section data-background-color="var(--primary)">
+				<div class="center-container">
+					<h1 style="font-size: 2em;">Trajectory Generation</h1>
+				</div>
+			</section>
+
+		<!-- Slide 4: Flat Outputs ------------------------------------------->
+		<section data-transition="slide">
+			<br>
+			<h1 class="slide-title">Flat Outputs</h1>
+
+			<br>
+
+			<div class="slide-body">
+
+				<div class="cbox" style="margin-bottom: 10px;">
+					<h2 style="margin-bottom: 0px;">Differential Flatness</h2>
+					<p>
+					A <i>non-linear</i> dynamical system $\mathbf{\dot{x}} =
+					\mathbf{f}(\mathbf{x}, \mathbf{u})$ is said to be <i>differentially
+						flat</i> if there exists a function $\Gamma(\cdot)$ such
+					that
+					\[
+					\mathbf{z} = \Gamma(\mathbf{x}, \mathbf{u},
+					\dot{\mathbf{u}}, \ldots, \mathbf{u}^{(p)})
+					\]
+					where $\mathbf{z}$ are <i>flat outputs</i>.
+				</div>
+
+				<div class="multi-column">
+
+					<!-- Unicycle Flat Outputs -->
+					<div class="column" 
+						 style="width: 30%; 
+								border-right: 1px solid var(--primary); 
+								padding-right: 10px;
+								margin-right: 10px;
+					">
+						<h2 style="text-align: center;">Unicycle Model</h2>
+						<p style="font-size: 0.9em;">
+						\[z_1 = x \quad\text{ and }\quad z_2 = y \]
+						\[
+						\begin{aligned}
+						\theta &= \arctan\left(\frac{\dot{z_2}}{\dot{z_1}}\right)\\
+						\omega_1 &= \frac{2 \sqrt{\dot{z_1}^2 + \dot{z_2}^2} + L
+						\dot{\theta}}{2 r}\\
+						\omega_2 &= \frac{2 \sqrt{\dot{z_1}^2 + \dot{z_2}^2} - L \dot{\theta}}{2 r}
+						\end{aligned}
+						\]
+						</p>
+					</div>
+
+					<!-- Helicopter Flat Outputs -->
+					<div class="column">
+						<h2 style="text-align: center;">Helicopter Model</h2>
+						<p style="font-size: 0.9em;">
+						\[
+						z_1 = x_I, \quad z_2 = y_I, \quad z_3 = z_I, \quad z_4 = \psi
+						\]
+						\[
+						\begin{aligned}
+						\dot{x}_B &= \cos(z_4) \dot{z}_1 + \sin(z_4) \dot{z}_2, \quad\quad \dot{z}_B = \dot{z}_3\\
+						\dot{y}_B &= -\sin(z_4) \dot{z}_1 + \cos(z_4) \dot{z}_2, \quad\quad \dot{\psi} = \dot{z}_4\\
+						u_x &= \frac{1}{b_x} \left( cos(z_4) \left[ \ddot{z}_1 - k_x \dot{z}_1
+						\right] + sin(z_4) \left[ \ddot{z}_2 - k_x \dot{z}_2 \right] \right)\\
+						u_y &= \frac{1}{b_y} \left( cos(z_4) \left[ \ddot{z}_2 - k_y \dot{z}_2 \right] + sin(z_4) \left[ -\ddot{z}_1 + k_y \dot{z}_1 \right] \right)\\
+						u_z &= \frac{1}{b_z} \left( \ddot{z}_3 + g \right), \quad u_{\psi} = \frac{1}{b_{\psi}} \left( \ddot{z}_4 - k_{\psi} \dot{z}_4
+						\right)
+						\end{aligned}
+						\]
+						</p>
+					</div>
+
+				</div>
+
+			</div>
+		</section>
+
+		<!-- Slide 5: Analytical Trajectory Generation ----------------------->
+		<section data-transition="slide">
+			<h1 class="slide-title">Analytical Trajectory Generation</h1>
+
+			<br>
+
+			<div class="slide-body">
+
+				<div class="multi-column">
+
+					<!-- Circle -->
+					<div class="column" style="width: 33%;">
+						<h2 style="text-align: center;">Circle</h2>
+						<p style="font-size: 1em;">
+						\[
+						\begin{cases}
+						z_1(t) = r_0 \cos(t)\\
+						z_2(t) = r_0 \sin(t)\\
+						z_3(t) = 0\\
+						z_4(t) = \text{atan2}\left(\dot{z}_2(t), \dot{z}_1(t)\right)
+						\end{cases}
+						\]
+						</p>
+					</div>
+
+					<!-- Vertical Line Separator -->
+					<div class="column-separator" style="width: 1%;"></div>
+
+					<!-- Lemniscate -->
+					<div class="column" style="width: 60%;">
+						<h2 style="text-align: center;">Lemniscate</h2>
+						<p style="font-size: 1em;">
+						\[
+						\begin{cases}
+						z_1(t) = \frac{a \sqrt{2} \cos(t)}{\sin(t)^2 + 1}\\
+						z_2(t) = \frac{a \sqrt{2} \cos(t) \sin(t)}{\sin(t)^2 + 1}\\
+						z_3(t) = 0\\
+						z_4(t) = \text{atan2}\left(\dot{z}_2(t), \dot{z}_1(t)\right)
+						\end{cases}
+						\]
+						</p>
+					</div>
+
+			</div>
+
+		</section>
+
+		<!-- Slide 6: Murray Method ------------------------------------------>
+		<section data-transition="slide">
+			<h1 class="slide-title">Murray Method</h1>
+
+			<br>
+
+			<div class="slide-body">
+
+				<div class="multi-column">
+					<div class="column" style="width: 45%;">
+						<div class="cbox" style="text-align: center; padding:
+									10px;">
+							Non-linear dynamics $\quad \mathbf{\dot{x}}(t) =
+							\mathbf{f}(\mathbf{x}(t), \mathbf{u}(t))$
+						</div>
+					</div>
+					<div class="column" style="width: 45%;">
+						<div class="cbox" style="text-align: center; padding:
+									10px;">
+							Flat outputs $\quad \mathbf{z}(t)$
+						</div>
+					</div>
+				</div>
+
+				<p style="text-align: left;">
+					Given the known flat outputs and their derivatives up to
+					order $q$ between $T_0=0$ and $T_f=T$:
+					\[ \bar{\mathbf{z}} = \begin{bmatrix} \mathbf{z}(0) & \dot{\mathbf{z}}(0) & \ldots & \mathbf{z}^{(q)}(0) & \mathbf{z}(T) & \dot{\mathbf{z}}(T) & \ldots & \mathbf{z}^{(q)}(T) \end{bmatrix}^T \]
+				</p>
+
+				<p style="text-align: left;">
+					Parametrize $\mathbf{z}(t)$ as a linear combination of
+					$N_{\text{basis}}$ basis functions $\mathbf{b}_i(t)$:
+					$\quad \mathbf{z}(t) = \sum_{i=1}^{N_{\text{basis}}}
+					\alpha_i \mathbf{b}_i(t) $
+					<br>
+					As explained in [<a href="#ref2">2</a>], find coefficients $\alpha_i$ solving the linear system:
+				</p>
+
+				<p style="text-align: left; font-size: 0.9em;">
+					\[
+					\begin{bmatrix}
+					\mathbf{b}_1(0) & \mathbf{b}_2(0) & \ldots & \mathbf{b}_{N_{\text{basis}}}(0) \\
+					\dot{\mathbf{b}}_1(0) & \dot{\mathbf{b}}_2(0) & \ldots & \dot{\mathbf{b}}_{N_{\text{basis}}}(0) \\
+					\vdots & \vdots & \ddots & \vdots \\
+					\mathbf{b}_1^{(q)}(0) & \mathbf{b}_2^{(q)}(0) & \ldots & \mathbf{b}_{N_{\text{basis}}}^{(q)}(0) \\
+					\mathbf{b}_1(T) & \mathbf{b}_2(T) & \ldots & \mathbf{b}_{N_{\text{basis}}}(T) \\
+					\dot{\mathbf{b}}_1(T) & \dot{\mathbf{b}}_2(T) & \ldots & \dot{\mathbf{b}}_{N_{\text{basis}}}(T) \\
+					\vdots & \vdots & \ddots & \vdots \\
+					\mathbf{b}_1^{(q)}(T) & \mathbf{b}_2^{(q)}(T) & \ldots & \mathbf{b}_{N_{\text{basis}}}^{(q)}(T)
+					\end{bmatrix}
+					\begin{bmatrix}
+					\alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_{N_{\text{basis}}}
+					\end{bmatrix}
+					=
+					\begin{bmatrix}
+					\mathbf{z}(0) \\ \dot{\mathbf{z}}(0) \\ \vdots \\ \mathbf{z}^{(q)}(0) \\
+					\mathbf{z}(T) \\ \dot{\mathbf{z}}(T) \\ \vdots \\ \mathbf{z}^{(q)}(T)
+					\end{bmatrix}
+					\]
+				</p>
+
+			</div>
+
+		</section>
+
+		</section>
+
+
+		<!-- Section: MPC Problem Formulation -------------------------------->
+		<section data-name="MPC Formulation">
+
+			<section data-background-color="var(--primary)">
+				<div class="center-container">
+					<h1 style="font-size: 2em;">MPC Problem Formulation</h1>
+				</div>
+			</section>
+
+		<!-- Slide 7: LTV Model ---------------------------------------------->
+		<section data-transition="fade">
+			<h1 class="slide-title">LTV Model</h1>
+
+			<div class="slide-body">
+
+				<p>
+				Given set of nominal state and inputs at regular times
+				$T_s$:
+				\[
+				\begin{aligned}
+				\bar{\mathbf{x}}_k &= \bar{\mathbf{x}}(k T_s), \quad k = k_0, \ldots, k_0 + N + 1\\
+				\bar{\mathbf{u}}_k &= \bar{\mathbf{u}}(k T_s), \quad k = k_0, \ldots, k_0 + N
+				\end{aligned}
+				\]
+				</p>
+				<p>
+				<b>Linearize</b> the non-linear model around the nominal trajectory:
+				\[
+				\delta \mathbf{x}(t) = \mathbf{A}_k \delta \mathbf{x}(t) + \mathbf{B}_k \delta
+				\mathbf{u}(t)
+				\]
+				\[
+				\mathbf{A}_k = \left. \frac{\partial \mathbf{f}}{\partial \mathbf{x}}
+				\right|_{\bar{\mathbf{x}}_k, \bar{\mathbf{u}}_k}, \quad
+				\mathbf{B}_k = \left. \frac{\partial \mathbf{f}}{\partial \mathbf{u}}
+				\right|_{\bar{\mathbf{x}}_k, \bar{\mathbf{u}}_k}
+				\]
+				\[
+				\delta \mathbf{x}(t) = \mathbf{x}(t) - \bar{\mathbf{x}}_k, \quad
+				\delta \mathbf{u}(t) = \mathbf{u}(t) - \bar{\mathbf{u}}_k
+				\]
+				with $k T_s \leq t < (k + 1) T_s$ for $k = k_0, \ldots, k_0 + N$
+				</p>
+			</div>
+
+		</section>
+		<section data-transition="fade">
+			<h1 class="slide-title">LTV Model</h1>
+
+			<div class="slide-body">
+
+				<p>
+				Then <b>discretize</b> using a forward Euler method:
+				\[
+				\delta \mathbf{x}_{k+1} = \mathbf{A}_{d,k} \delta \mathbf{x}_k + \mathbf{B}_{d,k} \delta
+				\mathbf{u}_k
+				\]
+				\[
+				\mathbf{A}_{d,k} = \mathbb{I} + T_s \mathbf{A}_k, \quad \mathbf{B}_{d,k} = T_s
+				\mathbf{B}_k
+				\]
+				\[
+				\delta \mathbf{x}_k = \mathbf{x}_k - \bar{\mathbf{x}}_k, \quad
+				\delta \mathbf{u}_k = \mathbf{u}_k - \bar{\mathbf{u}}_k
+				\]
+				</p>
+				<p>
+				Which can eventually be rewritten as:
+				\[
+				\begin{aligned}
+				\mathbf{x}_{k+1} &= \mathbf{A}_{d,k} \mathbf{x}_k + \mathbf{B}_{d,k} \mathbf{u}_k +
+				\mathbf{d}_k\\
+				\mathbf{d}_k &= \bar{\mathbf{x}}_{k+1} - \mathbf{A}_{d,k} \bar{\mathbf{x}}_k -
+				\mathbf{B}_{d,k} \bar{\mathbf{u}}_k
+				\end{aligned}
+				\]
+				</p>
+
+			</div>
+
+		</section>
+
+		<!-- Slide 8: MPC Problem Formulation -------------------------------->
+		<section data-transition="slide">
+			<h1 class="slide-title">MPC Problem Formulation</h1>
+
+			<div class="slide-body">
+
+				<p>
+				MPC optimization problem with horizon $N$:
+				\[
+				\begin{aligned}
+				\min_{\mathbf{U}_{t \to t+N | t}} \quad & \mathbf{J} = \sum_{k=t}^{t+N} \left( \Delta
+				\mathbf{x}_k^T \mathbf{Q} \Delta \mathbf{x}_k + \Delta \mathbf{u}_k^T \mathbf{R}
+				\Delta \mathbf{u}_k \right)\\
+				\text{s.t.} \quad & \mathbf{x}_{k+1 | t} = \mathbf{A}_{d,k | t} \mathbf{x}_{k |
+				t} + \mathbf{B}_{d,k | t} \mathbf{u}_{k | t} + \mathbf{d}_{k | t}\\
+				& \mathbf{d}_{k | t} = \bar{\mathbf{x}}_{k+1 | t} -
+				\mathbf{A}_{d,k | t} \bar{\mathbf{x}}_{k | t} - \mathbf{B}_{d,k
+				| t} \bar{\mathbf{u}}_{k | t}\\
+				& \mathbf{x}_{k | t} \in \mathcal{X}, \quad k = t, \ldots,
+				t+N\\
+				& \mathbf{u}_{k | t}
+				\in \mathcal{U}, \quad k = t, \ldots, t+N+1\\
+				\end{aligned}
+				\]
+				with:
+				<ul>
+					<li>Difference from state reference: $\Delta
+						\mathbf{x}_k = \mathbf{x}_{k | t} -
+						\mathbf{x}_{\text{ref},k | t}$</li>
+					<li>Difference from input reference: $\Delta \mathbf{u}_k =
+						\mathbf{u}_{k | t} - \mathbf{u}_{\text{ref},k | t}$</li>
+					<li>State constraints set $\mathcal{X}$</li>
+					<li>Input constraints set $\mathcal{U}$</li>
+					<li>Weight matrices $\mathbf{Q}$ and $\mathbf{R}$</li>
+				</ul>
+				</p>
+
+			</div>
+
+		</section>
+
+		<!-- Slide 9: Dense & Sparse Formulations ---------------------------->
+		<section data-transition="slide">
+			<h1 class="slide-title">Dense & Sparse Formulations</h1>
+
+			<div class="slide-body">
+
+			</div>
+
+			<!-- TODO: Just report final formulas -->
+			<!-- Highlight advantages and differences only: inequalities, better for -->
+			<!-- solvers, decision variables, which is easier to implement, etc. -->
+			<!-- Leave derivation as extra appendix or link to report -->
+			<!-- Maybe: show code implementation...(maybe too long) -->
+		</section>
+
+		<!-- Slide 10: MPC Pseudocode ---------------------------------------->
+		<section data-transition="slide">
+			<h1 class="slide-title">MPC Pseudocode</h1>
+
+			<div class="slide-body">
+
+			</div>
+
+		</section>
+		</section>
+
+		<!-- Slide 12: Extended Kalman Filter -------------------------------->
+		<section data-name="Extended Kalman Filter">
+
+			<section data-background-color="var(--primary)">
+				<div class="center-container">
+					<h1 style="font-size: 2em;">Extended Kalman Filter</h1>
+				</div>
+			</section>
+
+			<section data-transition="slide">
+				<h1 class="slide-title">Extended Kalman Filter</h1>
+
+				<div class="slide-body">
+
+					<p>
+					DIscrete-time non-linear system:
+					</p>
+		
+					<div class="multi-column">
+						<div class="column" style="width: 45%;">
+							<p>
+							\[
+							\begin{aligned}
+							\dot{\mathbf{x}}_k &= \mathbf{f}(\mathbf{x}_{k-1}, \mathbf{u}_{k-1}) + \mathbf{w}_k \\
+							\mathbf{y}_k &= \mathbf{g}(\mathbf{x}_k) + \mathbf{v}_k
+							\end{aligned}
+							\]
+							</p>
+						</div>
+
+						<div class="column" style="width: 45%;">
+							<div class="cbox" style="text-align: center; padding:
+										10px; font-size: 1em; margin-bottom: 10px;">
+								<b>Process Noise</b>
+								$\quad \mathbf{w}_k \sim \mathcal{N}(0,
+								\tilde{\mathbf{Q}}_k)$
+							</div>
+							<div class="cbox" style="text-align: center; padding:
+										10px; font-size: 1em;">
+								<b>Measurement Noise</b>
+								$\quad \mathbf{v}_k \sim \mathcal{N}(0,
+								\tilde{\mathbf{R}}_k)$
+							</div>
+						</div>
+					</div>
+
+					<p>
+						<b>Extended Kalman Filter (EKF)</b> steps:
+					</p>
+					<div class="multi-column">
+						<div class="column" style="width: 10%;">
+							<br>
+							<h2 style="text-align: left;">1. Prediction</h2>
+						</div>
+						<div class="column" style="width: 90%;">
+							\[
+							\begin{aligned}
+							\hat{\mathbf{x}}_{k | k-1} = \mathbf{f}(\hat{\mathbf{x}}_{k-1 | k-1},
+							\mathbf{u}_{k-1}) \quad & \quad \text{Predicted state estimate} \\
+							\mathbf{P}_{k | k-1} = \mathbf{A}_k \mathbf{P}_{k-1 | k-1} \mathbf{A}_k^T +
+							\tilde{\mathbf{Q}}_{k - 1} \quad & \quad \text{Predicted covariance estimate}
+							\end{aligned}
+							\]
+						</div>
+					</div>
+					<div class="multi-column">
+						<div class="column" style="width: 10%;">
+							<br>
+							<br>
+							<h2 style="text-align: left;">2. Update</h2>
+						</div>
+						<div class="column" style="width: 90%;">
+							\[
+							\begin{aligned}
+							\mathbf{K}_k = \mathbf{P}_{k | k-1} \mathbf{C}_k^T \left(
+							\mathbf{C}_k \mathbf{P}_{k | k-1} \mathbf{C}_k^T + \tilde{\mathbf{R}}_k
+							\right)^{-1} \quad & \quad \text{Kalman gain} \\
+							\hat{\mathbf{x}}_{k | k} = \hat{\mathbf{x}}_{k | k-1} + \mathbf{K}_k \left(
+							\mathbf{y}_k - \mathbf{g}(\hat{\mathbf{x}}_{k | k-1})
+							\right) \quad & \quad \text{Updated state estimate} \\
+							\mathbf{P}_{k | k} = \left( \mathbb{I} - \mathbf{K}_k \mathbf{C}_k \right)
+							\mathbf{P}_{k | k-1} \quad & \quad \text{Updated covariance
+							estimate}
+							\end{aligned}
+							\]
+						</div>
+					</div>
+
+				</div>
+
+
+			</section>
+
+		</section>
+
+		<!-- Section: Validation and Results ---------------------------------->
+		<section data-name="Validation and Results">
+
+			<section data-background-color="var(--primary)">
+				<div class="center-container">
+					<h1 style="font-size: 2em;">Validation and Results</h1>
+				</div>
+			</section>
+
+		<!-- Slide 13: Parameters & Constraints ------------------------------>
+		<section data-transition="slide">
+			<h1 class="slide-title">Parameters & Constraints</h1>
+
+			<div class="slide-body">
+
+			</div>
+		</section>
+
+		<!-- Slide 14: Experimental Setup ------------------------------------>
+		<section data-transition="slide">
+			<h1 class="slide-title">Experimental Setup</h1>
+
+			<div class="slide-body">
+
+			</div>
+		</section>
+
+		<!-- Slide 15: Results 1 --------------------------------------------->
+		<section data-transition="slide">
+			<h1 class="slide-title">Results 1</h1>
+
+			<div class="slide-body">
+
+			</div>
+		</section>
+
+		<!-- Slide 16: Results 2 --------------------------------------------->
+		<section data-transition="slide">
+			<h1 class="slide-title">Results 2</h1>
+
+			<div class="slide-body">
+
+			</div>
+		</section>
+
+		</section>
+
+
+		<!-- Section: References -----------------.--------------------------->
+		<section data-name="References" data-sm="false">
+			<h1 class="slide-title">References</h1>
+
+			<div class="slide-body">
+
+				<!-- References -->
+				<ol class="references">
+
+					<a id="ref1"></a>
+					<li>K. Kunz, S. M. Huck, T. H. Summers,<br>
+						<i>"Fast Model Predictive Control of miniature
+							helicopters"</i>,<br>
+						2013 European Control Conference (ECC), 2013, Pages
+						1377-1382,<br>
+						<a href="https://doi.org/10.23919/ECC.2013.6669699">
+							https://ieeexplore.ieee.org/document/6669699
+						</a>
+					</li>
+
+					<a id="ref2"></a>
+					<li>R.M. Murray,<br>
+						<i>"Optimization Based Control"</i>,<br>
+						California Institute of Technology, 2023, Chapter Trajectory Generation and Differential Flatness,<br>
+						<a href="http://www.cds.caltech.edu/~murray/books/AM08/pdf/obc-complete_12Mar2023.pdf">
+							http://www.cds.caltech.edu/~murray/books/AM08/pdf/obc-complete_12Mar2023.pdf
+						</a>
+					</li>
+
+					<a id="ref3"></a>
+					<li>R. E. Kalman,<br>
+						<i>"A New Approach to Linear Filtering and Prediction Problems"</i>,<br>
+						Journal of Basic Engineering, Volume 82, 1960, Pages 35-45,<br>
+						<a href="https://doi.org/10.1115/1.3662552">
+							https://asmedigitalcollection.asme.org/fluidsengineering/article-pdf/82/1/35/5518977/35_1.pdf
+						</a>
+					</li>
+
+					<a id="ref4"></a>
+					<li>R. E. Kalman, R. S. Bucy,<br>
+						<i>"New Results in Linear Filtering and Prediction Theory"</i>,<br>
+						Journal of Basic Engineering, Volume 83, 1961, Pages 95-108,<br>
+						<a href="https://doi.org/10.1115/1.3658902">
+							https://asmedigitalcollection.asme.org/fluidsengineering/article-pdf/83/1/95/5503549/95_1.pdf
+						</a>
+					</li>
+
+					<a id="ref5"></a>
+					<li>The MathWorks Inc.,<br>
+						<i>"MATLAB version: 24.2.0 (R2024b)"</i>,<br>
+						The MathWorks Inc., 2024,<br>
+						<a href="https://www.mathworks.com">
+							https://www.mathworks.com
+						</a>
+					</li>
+
+				</ol>
+			</div>
+		</section>
+
+
+		<!-- End of slides -->
+		</div>
+		</div>
+
+
+		<!-- Plugins and more ------------------------------------------------>
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/simplemenu/simplemenu.js"></script>
+		<script src="plugin/zoom/zoom.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script src="plugin/math/math.js"></script>
+		<script>
+			// INFO: More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				
+				// General configuration settings
+				transition: 'fade',
+				backgroundTransition: 'fade',
+
+				// INFO: Simplemenu Top Bar
+				// https://github.com/Martinomagnifico/reveal.js-simplemenu
+				simplemenu: {
+					inherit: "previous",
+					barhtml: {
+						header: "<div class='menubar' style='background-color: var(--primary); color: white;'><ul class='menu'></ul></div>"
+					}
+				},
+
+				// INFO: Learn about plugins: https://revealjs.com/plugins/
+				plugins: [
+					Simplemenu,
+					RevealMath.KaTeX,
+					RevealHighlight,
+					RevealNotes,
+					RevealZoom,
+				]
+			});
+		</script>
+
+
+	</body>
+</html>
