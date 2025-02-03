@@ -120,27 +120,91 @@
 		<section data-name="Non-Linear Models">
 
 			<section data-background-color="var(--primary)">
-				<div class="center-container">
+				<div class="section-title-container">
 					<h1 style="font-size: 2em;">Non-Linear Models</h1>
 				</div>
 			</section>
 
 		<!-- Slide 3: Non-linear Models -------------------------------------->
+		<!-- <section data-transition="slide"> -->
+		<!-- 	<h1 class="slide-title">Non-Linear Models</h1> -->
+		<!---->
+		<!-- 	<div class="slide-body"> -->
+		<!---->
+		<!-- 		<div class="multi-column"> -->
+		<!---->
+		<!-- 			Unicycle -->
+		<!-- 			<div class="column"  -->
+		<!-- 				 style="width: 30%;  -->
+		<!-- 						border-right: 1px solid var(--primary);  -->
+		<!-- 						padding-right: 10px; -->
+		<!-- 						margin-right: 10px; -->
+		<!-- 			"> -->
+		<!-- 				<h2 style="text-align: center;">Unicycle Model</h2> -->
+		<!-- 				<p> -->
+		<!-- 				\[ -->
+		<!-- 				\begin{cases} -->
+		<!-- 				\dot{x} = \frac{r}{2} (\omega_1 + \omega_2) \cos(\theta)\\ -->
+		<!-- 				\dot{y} = \frac{r}{2} (\omega_1 + \omega_2) \sin(\theta)\\ -->
+		<!-- 				\dot{\theta} = \frac{r}{L} (\omega_1 - \omega_2) -->
+		<!-- 				\end{cases} -->
+		<!-- 				\] -->
+		<!-- 				</p> -->
+		<!-- 				<p style="font-size: 0.8em;"> -->
+		<!-- 				State: $ \mathbf{x}(t) = \begin{bmatrix} x(t) & y(t) & \theta(t) \end{bmatrix}^T $ -->
+		<!-- 				<br> -->
+		<!-- 				Input: $ \mathbf{u}(t) = \begin{bmatrix} \omega_1(t) & \omega_2(t) \end{bmatrix}^T $     -->
+		<!-- 				</p> -->
+		<!-- 				<img src="./images/unicycle-model.png" style="width: 80%;"> -->
+		<!---->
+		<!-- 			</div> -->
+		<!---->
+		<!-- 			Helicopter -->
+		<!-- 			<div class="column;" style="width: 69%;"> -->
+		<!-- 				<h2 style="text-align: center;">Helicopter Model</h2> -->
+		<!-- 				<p> -->
+		<!-- 				\[ -->
+		<!-- 				\begin{cases} -->
+		<!-- 				\dot{x}_I = cos(\psi) \dot{x}_B - sin(\psi) \dot{y}_B\\ -->
+		<!-- 				\dot{y}_I = sin(\psi) \dot{x}_B + cos(\psi) \dot{y}_B\\ -->
+		<!-- 				\dot{z}_I = \dot{z}_B\\ -->
+		<!-- 				\ddot{x}_B = b_x u_x + k_x \dot{x}_B + \dot{\psi} \dot{y}_B\\ -->
+		<!-- 				\ddot{y}_B = b_y u_y + k_y \dot{y}_B - \dot{\psi} \dot{x}_B\\ -->
+		<!-- 				\dot{z}_B = b_z u_z - g\\ -->
+		<!-- 				\dot{\psi} = \dot{\psi}\\ -->
+		<!-- 				\ddot{\psi} = b_{\psi} u_{\psi} + k_{\psi} \dot{\psi} -->
+		<!-- 				\end{cases} -->
+		<!-- 				\] -->
+		<!-- 				</p> -->
+		<!-- 				<p style="font-size: 0.8em;"> -->
+		<!-- 				State: $ \mathbf{x}(t) = \begin{bmatrix} x_I(t) & y_I(t) & z_I(t) & \dot{x}_B(t) & \dot{y}_B(t) & \dot{z}_B(t) & \psi(t) & \dot{\psi}(t) \end{bmatrix}^T $ -->
+		<!-- 				<br> -->
+		<!-- 				Input: $ \mathbf{u}(t) = \begin{bmatrix} u_x(t) & u_y(t) & -->
+		<!-- 				u_z(t) & u_{\psi}(t) \end{bmatrix}^T $ -->
+		<!-- 				</p> -->
+		<!-- 			</div> -->
+		<!---->
+		<!-- 		 TODO: maybe add code implementation with animations and for --> -->
+		<!-- 		helicopter also assumptions with warning box --> 
+		<!---->
+		<!-- 	</div> -->
+		<!-- 	 -->
+		<!-- </section> -->
+
 		<section data-transition="slide">
-			<h1 class="slide-title">Non-Linear Models</h1>
+			<h1 class="slide-title">Unicycle Model</h1>
 
 			<div class="slide-body">
 
 				<div class="multi-column">
 
-					<!-- Unicycle -->
 					<div class="column" 
 						 style="width: 30%; 
 								border-right: 1px solid var(--primary); 
 								padding-right: 10px;
 								margin-right: 10px;
-					">
-						<h2 style="text-align: center;">Unicycle Model</h2>
+						">
+						<h2 style="text-align: center;">Non-linear Dynamics</h2>
 						<p>
 						\[
 						\begin{cases}
@@ -150,18 +214,120 @@
 						\end{cases}
 						\]
 						</p>
-						<p style="font-size: 0.8em;">
-						State: $ \mathbf{x}(t) = \begin{bmatrix} x(t) & y(t) & \theta(t) \end{bmatrix}^T $
-						<br>
-						Input: $ \mathbf{u}(t) = \begin{bmatrix} \omega_1(t) & \omega_2(t) \end{bmatrix}^T $    
+						<p>
+						\[
+						\begin{aligned}
+							\text{State:} \quad & \mathbf{x}(t) =
+							\begin{bmatrix} x(t) & y(t) & \theta(t)
+							\end{bmatrix}^T \\
+							\text{Input:} \quad & \mathbf{u}(t) =
+							\begin{bmatrix} \omega_1(t) & \omega_2(t)
+							\end{bmatrix}^T
+						\end{aligned}
+						\]
 						</p>
-						<img src="./images/unicycle-model.png" style="width: 80%;">
+						<div style="display: flex; justify-content: space-between;">
+							<img src="./images/unicycle-model.png" style="width:
+							49%;">
+							<img src="./images/roomba.gif" style="width: 49%;">
+						</div>
 
 					</div>
 
-					<!-- Helicopter -->
-					<div class="column;" style="width: 69%;">
-						<h2 style="text-align: center;">Helicopter Model</h2>
+					<div class="column" style="width: 69%;">
+						<h2 style="text-align: center;"><code style="color:
+								   var(--primary);">MATLAB</code> Class
+							Implementation</h2>
+<pre style="width: 100%; height: 90%;"><code><script type="text/template">classdef Unicycle < DynamicalSystem
+    properties
+        % Model parameters
+        n = 3;
+        m = 2;
+        p = 2;
+        Ts;
+        r;
+        L;
+				...
+    end
+    
+    methods
+        % Constructor
+        function obj = Unicycle(r, L, Ts, x_constraints, u_constraints, 
+														    P0, Q_tilde, R_tilde)
+            obj.r = r;
+            obj.L = L;
+            obj.Ts = Ts;
+						...
+        end
+
+        % State transition function
+        function dxdt = dynamics(obj, t, x, u)
+            theta = x(3);                               
+            omega1 = u(1);                              
+            omega2 = u(2);                             
+            v = obj.r / 2 * (omega1 + omega2);          
+            omega = obj.r / obj.L * (omega2 - omega1);  
+            dx_posdt = v * cos(theta);                  
+            dy_posdt = v * sin(theta);                  
+            dthetadt = omega;                           
+            dxdt = [dx_posdt; dy_posdt; dthetadt];
+        end
+
+        % Simulation function
+        function x_final = simulate(obj, x0, u, T)
+            x0(3) = wrapTo2Pi(x0(3));
+            [t, x] = ode45(@(t, x) obj.dynamics(t, x, u), [0, T], x0);
+            x_final = (x(end, :))';
+            x_final(3) = wrapTo2Pi(x_final(3));
+        end
+
+        % Output transformation function
+        function y = output(obj, x, u)
+            y = [x(1); x(2)];
+        end
+        
+        % Linearization function
+        function [A_lin, B_lin] = linearize(obj, x_bar, u_bar)
+						...
+        end
+
+				...
+				...
+				...
+
+        % Extended Kalman Filter (EKF) state estimation
+        function x_hat = EKF_estimate(obj, x_hat, u, y)
+						...
+        end
+
+
+        % Trajectory generation function
+        function [x_ref, u_ref, Tend] = generate_trajectory(...)
+						...
+        end
+    end
+end
+</script></code></pre>
+					</div>
+
+
+			</div>
+
+		</section>
+		<section data-transition="slide">
+			<h1 class="slide-title">Helicopter Model</h1>
+
+			<div class="slide-body">
+
+				<div class="multi-column">
+
+					<div class="column" 
+						 style="width: 30%; 
+								border-right: 1px solid var(--primary); 
+								padding-right: 10px;
+								margin-right: 10px;
+						">
+						<h2 style="text-align: center;">Non-linear Dynamics</h2>
 						<p>
 						\[
 						\begin{cases}
@@ -176,20 +342,100 @@
 						\end{cases}
 						\]
 						</p>
-						<p style="font-size: 0.8em;">
-						State: $ \mathbf{x}(t) = \begin{bmatrix} x_I(t) & y_I(t) & z_I(t) & \dot{x}_B(t) & \dot{y}_B(t) & \dot{z}_B(t) & \psi(t) & \dot{\psi}(t) \end{bmatrix}^T $
-						<br>
-						Input: $ \mathbf{u}(t) = \begin{bmatrix} u_x(t) & u_y(t) &
-						u_z(t) & u_{\psi}(t) \end{bmatrix}^T $
+						<p>
+						\[
+						8 \text{ states}, \quad\quad 4 \text{ inputs}
+						\]
 						</p>
+						<div style="display: flex; justify-content: space-between;">
+							<img src="./images/helicopter-model.png" style="width:
+							49%;">
+							<img src="./images/helicopter.gif" style="width: 49%;">
+						</div>
+
 					</div>
 
-				<!-- TODO: maybe add code implementation with animations and for -->
-				<!-- helicopter also assumptions with warning box -->
+					<div class="column" style="width: 69%;">
+						<h2 style="text-align: center;"><code style="color:
+								   var(--primary);">MATLAB</code> Class
+							Implementation</h2>
+<pre style="width: 100%; height: 85%;"><code><script type="text/template">classdef Unicycle < DynamicalSystem
+    properties
+        % Model parameters
+        n = 3;
+        m = 2;
+        p = 2;
+        Ts;
+        r;
+        L;
+				...
+    end
+    
+    methods
+        % Constructor
+        function obj = Unicycle(r, L, Ts, x_constraints, u_constraints, 
+														    P0, Q_tilde, R_tilde)
+            obj.r = r;
+            obj.L = L;
+            obj.Ts = Ts;
+						...
+        end
+
+        % State transition function
+        function dxdt = dynamics(obj, t, x, u)
+            theta = x(3);                               
+            omega1 = u(1);                              
+            omega2 = u(2);                             
+            v = obj.r / 2 * (omega1 + omega2);          
+            omega = obj.r / obj.L * (omega2 - omega1);  
+            dx_posdt = v * cos(theta);                  
+            dy_posdt = v * sin(theta);                  
+            dthetadt = omega;                           
+            dxdt = [dx_posdt; dy_posdt; dthetadt];
+        end
+
+        % Simulation function
+        function x_final = simulate(obj, x0, u, T)
+            x0(3) = wrapTo2Pi(x0(3));
+            [t, x] = ode45(@(t, x) obj.dynamics(t, x, u), [0, T], x0);
+            x_final = (x(end, :))';
+            x_final(3) = wrapTo2Pi(x_final(3));
+        end
+
+        % Output transformation function
+        function y = output(obj, x, u)
+            y = [x(1); x(2)];
+        end
+        
+        % Linearization function
+        function [A_lin, B_lin] = linearize(obj, x_bar, u_bar)
+						...
+        end
+
+				...
+				...
+				...
+
+        % Extended Kalman Filter (EKF) state estimation
+        function x_hat = EKF_estimate(obj, x_hat, u, y)
+						...
+        end
+
+
+        % Trajectory generation function
+        function [x_ref, u_ref, Tend] = generate_trajectory(...)
+						...
+        end
+    end
+end
+</script></code></pre>
+					</div>
+
 
 			</div>
-			
+
 		</section>
+
 
 		</section>
 
@@ -197,7 +443,7 @@
 		<section data-name="Trajectory Generation">
 
 			<section data-background-color="var(--primary)">
-				<div class="center-container">
+				<div class="section-title-container">
 					<h1 style="font-size: 2em;">Trajectory Generation</h1>
 				</div>
 			</section>
@@ -317,6 +563,19 @@
 						</p>
 					</div>
 
+				</div>
+
+				<p>
+				Sample trajectories at time steps
+				$\{t_k\}_{k=1}^{N_{guide}}$	$\rightarrow$ obtain $N_{guide}$ reference
+				points $\{(\mathbf{x}_{\text{ref}, k}, \mathbf{u}_{\text{ref}, k})\}_{k=1}^{N_{guide}}$
+				</p>
+				<p>
+				Total time to complete the
+				trajectory set to:
+				$\quad T_{end} = N_{guide} \cdot T_s$
+				</p>
+
 			</div>
 
 		</section>
@@ -394,7 +653,7 @@
 		<section data-name="MPC Formulation">
 
 			<section data-background-color="var(--primary)">
-				<div class="center-container">
+				<div class="section-title-container">
 					<h1 style="font-size: 2em;">MPC Problem Formulation</h1>
 				</div>
 			</section>
@@ -718,7 +977,7 @@ function [x, u] = optimize(obj)
 		<section data-name="Extended Kalman Filter">
 
 			<section data-background-color="var(--primary)">
-				<div class="center-container">
+				<div class="section-title-container">
 					<h1 style="font-size: 2em;">Extended Kalman Filter</h1>
 				</div>
 			</section>
@@ -813,7 +1072,7 @@ function [x, u] = optimize(obj)
 		<section data-name="Validation and Results">
 
 			<section data-background-color="var(--primary)">
-				<div class="center-container">
+				<div class="section-title-container">
 					<h1 style="font-size: 2em;">Validation and Results</h1>
 				</div>
 			</section>
@@ -824,6 +1083,95 @@ function [x, u] = optimize(obj)
 
 			<div class="slide-body">
 
+
+				<div class="multi-column">
+
+					<!-- Unicycle -->
+					<div class="column" 
+						 style="width: 40%; 
+								border-right: 1px solid var(--primary); 
+								padding-right: 10px;
+								margin-right: 20px;
+					">
+						<h2 style="text-align: center;">Unicycle Model</h2>
+
+						<p style="margin-bottom: 75px;">
+						Model parameters:
+						<br>
+						\[
+						\begin{aligned}
+							&r = 0.03 \; \text{m}\\
+							&L = 0.3 \; \text{m}\\
+							&T_s = 0.1 \; \text{s}\\
+							&x \in [-2, 2] \; \text{m}, \quad y \in [-2, 2] \;
+							\text{m}\\ 
+							&\omega_1, \; \omega_2 \in [-50, 50] \; \text{rad/s}
+						\end{aligned}
+						\]
+						</p>
+
+
+						<div class="cbox" 
+							style="text-align: left;
+								   padding: 10px 0px 0px 10px;
+								   font-size: 1em;
+								   ">
+							MPC Parameters:
+							\[
+							\begin{aligned}
+								&N = 10\\
+								&\mathbf{Q} = 10^3 \cdot \mathbb{I}_{3 \times 3}\\
+								&\mathbf{R} = \mathbb{I}_{2 \times 2}
+							\end{aligned}
+							\]
+						</div>
+
+					</div>
+
+					<!-- Helicopter -->
+					<div class="column;" style="width: 60%;">
+						<h2 style="text-align: center;">Helicopter Model</h2>
+
+						<p>
+						Model parameters [<a href="#ref1">1</a>]:
+						\[
+						\begin{aligned}
+							&b_x = 2, \quad b_y = 2, \quad b_z = 18, \quad
+							b_{\psi} = 111\\
+							&k_x = -0.5, \quad k_y = -0.5, \quad k_{\psi} = -5\\
+							&T_s = 0.1 \; \text{s}\\
+							&x_I \in [-2, 2] \; \text{m}, \quad y_I \in [-2, 2]
+							\; \text{m}, \quad z_I \in [-2, 2] \; \text{m}\\
+							&\ddot{x}_B \in [-3, 3] \;
+							\frac{\text{m}}{\text{s}^2}, \quad \ddot{y}_B \in
+							[-3, 3] \; \frac{\text{m}}{\text{s}^2}, \quad
+							\ddot{z}_B \in [-2, 2] \;
+							\frac{\text{m}}{\text{s}^2}\\
+							&\dot{\psi} \in [-25, 25] \; \text{rad/s}, \quad
+							u_i \in [-2, 2] \; \text{for } i = x, y, z, \psi
+						\end{aligned}
+						\]
+						</p>
+
+						<div class="cbox" 
+							style="text-align: left;
+								   padding: 10px 0px 0px 10px;
+								   font-size: 1em;
+								   ">
+							MPC Parameters [<a href="#ref1">1</a>]:
+							\[
+							\begin{aligned}
+								&N = 18\\
+								&\mathbf{Q} = \text{diag}\left(50, 50, 5, 10, 3,
+				3, 1, 2\right)\\
+								&\mathbf{R} = 2 \cdot \mathbb{I}_{4 \times 4}
+							\end{aligned}
+							\]
+						</div>
+
+					</div>
+
+				</div>
 			</div>
 		</section>
 
@@ -833,25 +1181,123 @@ function [x, u] = optimize(obj)
 
 			<div class="slide-body">
 
+				<div class="cbox" style="font-size: 0.9em; margin-bottom: 10px;">
+					<b>Experiment $1$</b>: Loop around trajectory<br>
+					<ul style="padding-left: 130px;">
+						<li> $N_{\text{guide}} = 100$</li>
+						<li> $\mathbf{x}_0$ randomly initialized s.t. $||\mathbf{x}_0 -
+							\mathbf{x}_{\text{ref}, 1}||_2 \leq 0.05$</li>
+						<li> $100$ repetitions</li>
+					</ul>
+				</div>
+
+				<div class="cbox" style="font-size: 0.9em; margin-bottom: 10px;">
+					<b>Experiment $2$</b>: Loop around trajectory with noise<br>
+					<ul style="padding-left: 130px;">
+						<li> $N_{\text{guide}} = 100$</li>
+						<li> $\mathbf{x}_0$ randomly initialized s.t. $||\mathbf{x}_0 -
+							\mathbf{x}_{\text{ref}, 1}||_2 \leq 0.05$</li>
+						<li> $20$ repetitions</li>
+						<li> Process noise: $\tilde{\mathbf{Q}} = 
+							0.75 \cdot 10^{-3}  \cdot
+							\mathbb{I}_{n \times n}$</li>
+						<li> Measurement noise: $\tilde{\mathbf{R}} = 10^{-2}
+							\cdot \mathbb{I}_{m \times m}$</li>
+						<li> Initial state covariance: $\mathbf{P}_0 = \mathbb{I}_{n \times n}$</li>
+					</ul>
+				</div>
+
+				<div class="cbox" style="font-size: 0.9em; margin-bottom: 10px;">
+					<b>Experiment $3$</b>: Increasing horizon $N$<br>
+					<ul style="padding-left: 130px;">
+						<li> $N = 1, 2, \ldots, 20$</li>
+						<li> Same setup as Experiment $1$</li>
+						<li> $10$ repetitions per $N$ value</li>
+					</ul>
+				</div>
+
 			</div>
 		</section>
 
 		<!-- Slide 15: Results 1 --------------------------------------------->
 		<section data-transition="slide">
-			<h1 class="slide-title">Results 1</h1>
+			<h1 class="slide-title">Results Experiments $1$ and $2$</h1>
 
 			<div class="slide-body">
+
+				<table class="latex-table">
+
+					<thead>
+						<tr>
+							<th>Model</th>
+							<th>Trajectory</th>
+							<th>State RMSE</th>
+							<th>Input RMSE</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td rowspan="2" style="vertical-align: middle;">Unicycle</td>
+							<td>Circle</td>
+							<td>0.020 ± 0.007</td>
+							<td>0.227 ± 0.068</td>
+						</tr>
+						<tr>
+							<td>Lemniscate</td>
+							<td>0.030 ± 0.002</td>
+							<td>0.857 ± 0.023</td>
+						</tr>
+						<tr>
+							<td rowspan="2" style="vertical-align: middle;">Helicopter</td>
+							<td>Circle</td>
+							<td>0.034 ± 0.013</td>
+							<td>0.096 ± 0.011</td>
+						</tr>
+						<tr>
+							<td>Lemniscate</td>
+							<td>0.686 ± 0.001</td>
+							<td>0.302 ± 0.007</td>
+						</tr>
+						<tr>
+							<td rowspan="2" style="vertical-align: middle;">Unicycle<br>(with noise)</td>
+							<td>Circle</td>
+							<td>0.056 ± 0.015</td>
+							<td>0.634 ± 0.190</td>
+						</tr>
+						<tr>
+							<td>Lemniscate</td>
+							<td>0.204 ± 0.251</td>
+							<td>1.037 ± 0.106</td>
+						</tr>
+						<tr>
+							<td rowspan="2" style="vertical-align: middle;">Helicopter<br>(with
+								noise)</td>
+							<td>Circle</td>
+							<td>1.073 ± 0.329</td>
+							<td>0.215 ± 0.025</td>
+						</tr>
+						<tr>
+							<td>Lemniscate</td>
+							<td>1.169 ± 0.207</td>
+							<td>0.569 ± 0.071</td>
+						</tr>
+					</tbody>
+				</table>
 
 			</div>
 		</section>
 
 		<!-- Slide 16: Results 2 --------------------------------------------->
 		<section data-transition="slide">
-			<h1 class="slide-title">Results 2</h1>
+			<h1 class="slide-title">Results Experiment $3$</h1>
 
-			<div class="slide-body">
-
+			<div class="section-title-container" style="height: 85%;">
+				<img src="./images/unicycle-horizon.png" style="width: 50%;">
+				<img src="./images/helicopter-horizon.png" style="width: 50%;">
 			</div>
+			<!-- <div class="slide-body"> -->
+			<!---->
+			<!-- </div> -->
 		</section>
 
 		</section>
