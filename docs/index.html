@@ -20,7 +20,7 @@
 		<link rel="stylesheet" href="dist/theme/personal.css" id="theme">
 
 		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+		<link rel="stylesheet" href="plugin/highlight/nnfx-light.css">
 
 		<!-- Personal CSS Styling -->
 		<link rel="stylesheet" href="style.css" />
@@ -519,6 +519,60 @@
 
 			<div class="slide-body">
 
+				<div class="multi-column">
+
+					<div class="column"
+						 style="width: 50%; 
+								border-right: 1px solid var(--primary); 
+								margin-right: 20px;
+								">
+						<h2 style="text-align: center;">Dense Formulation</h2>
+						<p style="margin-bottom: 63px;">
+						\[
+						\begin{aligned}
+						\min_{\mathbf{U}_k} \quad & \mathbf{U}_k^T \mathbf{H}_k \mathbf{U}_k + 2 \mathbf{f}_k^T
+						\mathbf{U}_k\\
+						\text{s.t.} \quad & \mathcal{E} \mathbf{U}_k \leq \mathcal{F}
+						\end{aligned}
+						\]
+						</p>
+						<p>
+							<ul>
+								<li> QP problem</li>
+								<li> decision variables: $\mathbf{U}_k$
+									<b>control inputs</b></li>
+								<li> <b>only inequality</b> constraints</li>
+							</ul>
+						</p>
+					</div>
+
+					<div class="column">
+						<h2 style="text-align: center;">Sparse Formulation</h2>
+						<p>
+						\[
+						\begin{aligned}
+						\min_{\mathbf{Z}_k} \quad & \mathbf{Z}_k^T \mathbf{V} \mathbf{Z}_k + 2
+						\tilde{\mathbf{f}}_k^T
+						\mathbf{Z}_k\\
+						\text{s.t.} \quad & \mathcal{E}_{\mathbf{Z}} \mathbf{Z}_k \leq \mathcal{F}_{\mathbf{Z}}\\
+						& \mathcal{E}_{\text{eq.}} \mathbf{Z}_k = \mathcal{F}_{\text{eq.}}
+						\end{aligned}
+						\]
+						</p>
+						<p>
+							<ul>
+								<li> QP problem</li>
+								<li> more decision variables: $\mathbf{Z}_k =
+									\begin{bmatrix} \mathbf{X}_k & \mathbf{U}_k
+									\end{bmatrix}^T$ </li>
+								<li> <b>equality and inequality</b> constraints</li>
+								<li> better for solver (sparsity)</li>
+							</ul>
+						</p>
+					</div>
+
+				</div>
+
 			</div>
 
 			<!-- TODO: Just report final formulas -->
@@ -530,9 +584,130 @@
 
 		<!-- Slide 10: MPC Pseudocode ---------------------------------------->
 		<section data-transition="slide">
-			<h1 class="slide-title">MPC Pseudocode</h1>
+			<h1 class="slide-title">MPC Algorithm Implementation</h1>
 
 			<div class="slide-body">
+
+				<!-- NOTE: Display notes, in reverse order of appearance -->
+				<div style="position:relative; 
+							padding-bottom: 20px;
+							display: flex;
+							justify-content: center;
+				">
+					<p class="fragment fade-in-then-out"
+					   style="position:absolute; text-align: center;"
+					   data-fragment-index="8">
+						Store remaining optimization results as <b>next
+							iteration nominal inputs</b>
+					</p>
+					<p class="fragment fade-in-then-out"
+					   style="position:absolute; text-align: center;"
+					   data-fragment-index="7">
+						Update the state vector simulating the system with the
+						optimal input
+					</p>
+					<p class="fragment fade-in-then-out"
+					   style="position:absolute; text-align: center;"
+					   data-fragment-index="6">
+						Extract <b>optimal input</b> ($1^{\text{st}}$ input
+						vector)
+					</p>
+					<p class="fragment fade-in-then-out"
+					   style="position:absolute; text-align: center;"
+					   data-fragment-index="5">
+						<b>Optimization phase</b>: set constraints and solve QP
+						problem
+					</p>
+					<p class="fragment fade-in-then-out"
+					   style="position:absolute; text-align: center;"
+					   data-fragment-index="4">
+						<b>Prediction horizon loop</b>: linearize, discretize,
+						build formulation matrices and fix angles
+					</p>
+					<p class="fragment fade-in-then-out"
+					   style="position:absolute; text-align: center;"
+					   data-fragment-index="3">
+					Set first nominal inputs from reference ($1^{\text{st}}$
+					iteration)
+					</p>
+					<p class="fragment fade-in-then-out"
+					   style="position:absolute; text-align: center;"
+					   data-fragment-index="2">
+					Set initial conditions (<b>with</b> or <b>without</b> noise)
+					</p>
+					<p class="fragment fade-in-then-out"
+					   style="position:absolute; text-align: center;"
+					   data-fragment-index="1">
+					Set horizon $N$, number of states $n$ and inputs $m$
+					</p>
+				</div>
+
+					<br>
+
+				<pre><code
+				data-line-numbers="1-61|4-7|9-18|19-21|29-36|38-42|44-46|48-56|58-60"
+				data-fragment-index="1">% MPC optimization function
+function [x, u] = optimize(obj)
+
+	% Define number of states, inputs and horizon
+	n = obj.model.n;
+	m = obj.model.m;
+	N = obj.N;
+
+	% Initialize the state and input vectors
+	x = obj.x0;
+	if obj.noise
+		% Noise components generation for Kalman filter
+		w = mvnrnd(zeros(obj.model.n, 1), obj.model.Q_tilde, obj.Nsteps);
+		v = mvnrnd(zeros(obj.model.p, 1), obj.model.R_tilde, obj.Nsteps);
+		x_last = obj.x0 + w(1, :)';
+	else
+		x_last = obj.x0;
+	end
+	u = [];
+	obj.set_reference(1);
+	u_pred = obj.U_REF;
+
+	% Solve optimization problem at each time step
+	for k = 1:obj.Nsteps
+
+		% Set reference states and inputs with or without preview
+		obj.set_reference(k);
+
+		% Define formulation matrices
+		[A, B, D] = obj.set_formulation(x_last, u_pred);
+
+		% Fix angle representation in X_REF
+		obj.X_REF = obj.model.fix_angles(obj.x_pred, obj.X_REF);
+
+		% Set augmented reference state Z_REF
+		obj.Z_REF = [obj.X_REF; obj.U_REF];
+
+		% Set constraints matrices
+		[H, f, EPS, F, EPS_eq, F_eq] = obj.set_constraints(A, B, D, x_last);
+
+		% Solve the optimization problem and get optimal input sequence
+		UMPC = obj.solve(H, f, EPS, F, EPS_eq, F_eq);
+
+		% Extract the optimal input and update the input vector
+		u_optimal = UMPC(1:m); % only pick the first inputs (of size m)
+		u = [u; u_optimal];
+
+		% Update the state vector simulating the system with the optimal input
+		if obj.noise
+			update_last = obj.model.simulate(x_last, u_optimal, obj.Ts) + w(k,:)';
+			measured_output = obj.model.output(update_last, u_optimal) + v(k,:)';
+			x_last = obj.model.EKF_estimate(x_last, u_optimal, measured_output);
+		else
+			x_last = obj.model.simulate(x_last, u_optimal, obj.Ts);
+		end
+		x = [x; x_last];
+
+		% Update the prediction inputs with the remaining optimization results
+		u_remaining = UMPC(m+1:end);
+		u_pred = [u_remaining; u_remaining(end-m+1:end)]; % duplicate last inputs
+	end
+				</code></pre>
 
 			</div>
 
@@ -554,7 +729,7 @@
 				<div class="slide-body">
 
 					<p>
-					DIscrete-time non-linear system:
+					Discrete-time non-linear system:
 					</p>
 		
 					<div class="multi-column">
