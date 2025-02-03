@@ -633,3 +633,6 @@ codegen/
 
 # Octave session info
 octave-workspace
+
+# Ignore mp4 files
+*.mp4
