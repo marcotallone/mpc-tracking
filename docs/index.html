@@ -104,7 +104,7 @@
 
 				<h2 style="margin-bottom: 0px;">Table of Contents</h2>
 				<!-- <small> -->
-				<ol>
+<ol>
 					<li>Non-Linear Models</li>
 					<li>Trajectory Generation Mehtods</li>
 					<li>MPC Problem Formulation</li>
@@ -322,7 +322,7 @@ end
 				<div class="multi-column">
 
 					<div class="column" 
-						 style="width: 30%; 
+						 style="width: 33%; 
 								border-right: 1px solid var(--primary); 
 								padding-right: 10px;
 								margin-right: 10px;
@@ -332,7 +332,7 @@ end
 						\[
 						\begin{cases}
 						\dot{x}_I = cos(\psi) \dot{x}_B - sin(\psi) \dot{y}_B\\
-						\dot{y}_I = sin(\psi) \dot{x}_B + cos(\psi) \dot{y}_B\\
+\dot{y}_I = sin(\psi) \dot{x}_B + cos(\psi) \dot{y}_B\\
 						\dot{z}_I = \dot{z}_B\\
 						\ddot{x}_B = b_x u_x + k_x \dot{x}_B + \dot{\psi} \dot{y}_B\\
 						\ddot{y}_B = b_y u_y + k_y \dot{y}_B - \dot{\psi} \dot{x}_B\\
@@ -355,56 +355,62 @@ end
 
 					</div>
 
-					<div class="column" style="width: 69%;">
+					<div class="column" style="width: 67%;">
 						<h2 style="text-align: center;"><code style="color:
 								   var(--primary);">MATLAB</code> Class
 							Implementation</h2>
-<pre style="width: 100%; height: 85%;"><code><script type="text/template">classdef Unicycle < DynamicalSystem
+<pre style="width: 100%; height: 85%;"><code><script type="text/template">classdef Helicopter < DynamicalSystem
     properties
         % Model parameters
-        n = 3;
-        m = 2;
-        p = 2;
+        n = 8;
+        m = 4;
+        p = 4;
         Ts;
-        r;
-        L;
-				...
+        bx;
+        by;
+        bz;
+        bpsi;
+        kx;
+        ky;
+        kpsi;
+        ki;
+        g = 9.81;
+		...
     end
-    
-    methods
+
+   methods
         % Constructor
-        function obj = Unicycle(r, L, Ts, x_constraints, u_constraints, 
-														    P0, Q_tilde, R_tilde)
-            obj.r = r;
-            obj.L = L;
-            obj.Ts = Ts;
+        function obj = Helicopter(parameters, Ts, x_constraints, u_constraints,
+                                  P0, Q_tilde, R_tilde)
 						...
         end
 
         % State transition function
         function dxdt = dynamics(obj, t, x, u)
-            theta = x(3);                               
-            omega1 = u(1);                              
-            omega2 = u(2);                             
-            v = obj.r / 2 * (omega1 + omega2);          
-            omega = obj.r / obj.L * (omega2 - omega1);  
-            dx_posdt = v * cos(theta);                  
-            dy_posdt = v * sin(theta);                  
-            dthetadt = omega;                           
-            dxdt = [dx_posdt; dy_posdt; dthetadt];
+            dxidt = cos(x(7)) * x(4) - sin(x(7)) * x(5);
+            dyidt = sin(x(7)) * x(4) + cos(x(7)) * x(5);
+            dzidt = x(6);
+            dvxbdt = obj.bx * u(1) + obj.kx * x(4) + x(8) * x(5);
+            dvybdt = obj.by * u(2) + obj.ky * x(5) - x(8) * x(4);
+            dvzbd = obj.bz * u(3) - obj.g;
+            dpsidt = x(8);
+            dvpsidt = obj.bpsi * u(4) + obj.kpsi * x(8);
+
+            dxdt = [dxidt; dyidt; dzidt; dvxbdt; dvybdt; dvzbd; dpsidt; dvpsidt];
         end
 
         % Simulation function
         function x_final = simulate(obj, x0, u, T)
-            x0(3) = wrapTo2Pi(x0(3));
+            x0(7) = wrapTo2Pi(x0(7));
+
             [t, x] = ode45(@(t, x) obj.dynamics(t, x, u), [0, T], x0);
             x_final = (x(end, :))';
-            x_final(3) = wrapTo2Pi(x_final(3));
+            x_final(7) = wrapTo2Pi(x_final(7));
         end
 
         % Output transformation function
         function y = output(obj, x, u)
-            y = [x(1); x(2)];
+            y = [x(1); x(2); x(3); x(7)];
         end
         
         % Linearization function
@@ -412,15 +418,15 @@ end
 						...
         end
 
-				...
-				...
-				...
+        % Fix reference angles function
+        function x_ref_fixed = fix_angles(obj, x, x_ref)
+						...
+        end
 
         % Extended Kalman Filter (EKF) state estimation
         function x_hat = EKF_estimate(obj, x_hat, u, y)
 						...
         end
-
 
         % Trajectory generation function
         function [x_ref, u_ref, Tend] = generate_trajectory(...)
@@ -521,7 +527,7 @@ end
 		</section>
 
 		<!-- Slide 5: Analytical Trajectory Generation ----------------------->
-		<section data-transition="slide">
+		<section data-transition="slide" data-auto-animate>
 			<h1 class="slide-title">Analytical Trajectory Generation</h1>
 
 			<br>
@@ -531,9 +537,86 @@ end
 				<div class="multi-column">
 
 					<!-- Circle -->
-					<div class="column" style="width: 33%;">
+					<div class="column" style="width: 25%;">
 						<h2 style="text-align: center;">Circle</h2>
-						<p style="font-size: 1em;">
+						<p style="font-size: 1em;" data-id="circle-text">
+						\[
+						\begin{cases}
+						z_1(t) = r_0 \cos(t)\\
+						z_2(t) = r_0 \sin(t)\\
+						z_3(t) = 0\\
+						z_4(t) = \text{atan2}\left(\dot{z}_2(t), \dot{z}_1(t)\right)
+						\end{cases}
+						\]
+						</p>
+						<div style="display: flex; justify-content: center;"
+							 data-id="circle-image">
+							<img src="./images/circular_reference-b.gif"
+								  style="heigth: 300px; width: 300px; border: 1px
+										 solid var(--primary);">
+						</div>
+					</div>
+
+					<!-- Lemniscate -->
+					<div class="column" style="width: 74%;">
+						<h2 style="text-align: center;">Lemniscate</h2>
+						<p style="font-size: 1em; margin-bottom: -10px;"
+						   data-id="lemniscate-text">
+						\[
+						\begin{cases}
+						z_1(t) = \frac{a \sqrt{2} \cos(t)}{\sin(t)^2 + 1}\\
+						z_2(t) = \frac{a \sqrt{2} \cos(t) \sin(t)}{\sin(t)^2 + 1}\\
+						z_3(t) = 0\\
+						z_4(t) = \text{atan2}\left(\dot{z}_2(t), \dot{z}_1(t)\right)
+						\end{cases}
+						\]
+						</p>
+						<div style="display: flex; justify-content: center;" 
+							 data-id="lemniscate-image">
+							<img src="./images/lemniscate_reference-b.gif" style="width:
+								  700px; height: 300px; border: 1px solid
+								  var(--primary);">
+						</div>
+					</div>
+
+				</div>
+
+				<p>
+				Sample trajectories at time steps
+				$\{t_k\}_{k=1}^{N_{guide}}$	$\rightarrow$ obtain $N_{guide}$ reference
+				points $\{(\mathbf{x}_{\text{ref}, k}, \mathbf{u}_{\text{ref}, k})\}_{k=1}^{N_{guide}}$
+				</p>
+				<div class="cbox" style="font-size: 1em;"
+								  data-id="inputs-warning">
+				<span style="color: black;">⚠</span>
+				Discrete reference inputs $\mathbf{u}_{\text{ref}, k}$ $\rightarrow$ from averages of
+				continuous-time inputs $\mathbf{u}_{\text{ref}}(t)$:<br>
+				\[ \mathbf{u}_{\text{ref}, k} = \frac{1}{N_{samples}}
+				\sum_{i=1}^{N_{samples}} \mathbf{u}_{\text{ref}}\left(t_k +
+				\frac{i \cdot T_s}{N_{samples}} \right) \]
+				</div>
+				<p>
+				Total time to complete the
+				trajectory set to:
+				$\quad T_{end} = N_{guide} \cdot T_s$
+				</p>
+
+			</div>
+
+		</section>
+		<section data-auto-animate>
+			<h1 class="slide-title">Analytical Trajectory Generation</h1>
+
+			<br>
+
+			<div class="slide-body">
+
+				<div class="multi-column">
+
+					<!-- Circle -->
+					<div class="column" style="width: 25%;">
+						<h2 style="text-align: center;">Circle</h2>
+						<p style="font-size: 1em;" data-id="circle-text">
 						\[
 						\begin{cases}
 						z_1(t) = r_0 \cos(t)\\
@@ -545,13 +628,11 @@ end
 						</p>
 					</div>
 
-					<!-- Vertical Line Separator -->
-					<div class="column-separator" style="width: 1%;"></div>
-
 					<!-- Lemniscate -->
-					<div class="column" style="width: 60%;">
+					<div class="column" style="width: 74%;">
 						<h2 style="text-align: center;">Lemniscate</h2>
-						<p style="font-size: 1em;">
+						<p style="font-size: 1em; margin-bottom: -10px;"
+						   data-id="lemniscate-text">
 						\[
 						\begin{cases}
 						z_1(t) = \frac{a \sqrt{2} \cos(t)}{\sin(t)^2 + 1}\\
@@ -561,6 +642,11 @@ end
 						\end{cases}
 						\]
 						</p>
+						<!-- <div style="display: flex; justify-content: center;"> -->
+						<!-- 	<img src="./images/lemniscate_reference.gif" style="width: -->
+						<!-- 		  700px; height: 300px; border: 1px solid -->
+						<!-- 		  var(--primary);"> -->
+						<!-- </div> -->
 					</div>
 
 				</div>
@@ -570,6 +656,15 @@ end
 				$\{t_k\}_{k=1}^{N_{guide}}$	$\rightarrow$ obtain $N_{guide}$ reference
 				points $\{(\mathbf{x}_{\text{ref}, k}, \mathbf{u}_{\text{ref}, k})\}_{k=1}^{N_{guide}}$
 				</p>
+				<div class="cbox" style="font-size: 1em;"
+								  data-id="inputs-warning">
+				<span style="color: black;">⚠</span>
+				Discrete reference inputs $\mathbf{u}_{\text{ref}, k}$ $\rightarrow$ from averages of
+				continuous-time inputs $\mathbf{u}_{\text{ref}}(t)$:<br>
+				\[ \mathbf{u}_{\text{ref}, k} = \frac{1}{N_{samples}}
+				\sum_{i=1}^{N_{samples}} \mathbf{u}_{\text{ref}}\left(t_k +
+				\frac{i \cdot T_s}{N_{samples}} \right) \]
+				</div>
 				<p>
 				Total time to complete the
 				trajectory set to:
@@ -773,7 +868,8 @@ end
 		</section>
 
 		<!-- Slide 9: Dense & Sparse Formulations ---------------------------->
-		<section data-transition="slide">
+
+		<section data-transition="slide" data-auto-animate>
 			<h1 class="slide-title">Dense & Sparse Formulations</h1>
 
 			<div class="slide-body">
@@ -786,7 +882,279 @@ end
 								margin-right: 20px;
 								">
 						<h2 style="text-align: center;">Dense Formulation</h2>
-						<p style="margin-bottom: 63px;">
+						<p style="text-align: center;" data-id="dense-formulation">
+						Introduce vectorized notation:
+						\[
+						\begin{aligned}
+						\mathbf{X}_k &= \begin{bmatrix}
+						\mathbf{x}_k^T &  \mathbf{x}_{k+1}^T & \ldots & 
+						\mathbf{x}_{k+N-1}^T
+						\end{bmatrix}^T\\
+						\mathbf{U}_k &= \begin{bmatrix}
+						\mathbf{u}_k^T &  \mathbf{u}_{k+1}^T & \ldots & 
+						\mathbf{u}_{k+N-1}^T
+						\end{bmatrix}^T
+						\end{aligned}
+						\]
+						so that
+						\[
+						\mathbf{X}_k = \mathcal{A} \mathbf{x}_k + \mathcal{B} \mathbf{U}_k + \mathcal{D}	
+						\]
+						(see Report Appendix A$2$ for $\mathcal{A}$,
+						$\mathcal{B}$, and $\mathcal{D}$)<br>
+						<br>
+						Then introduce also:
+						\[
+						\begin{aligned}
+						\mathcal{Q} &= \text{diag}(\mathbf{Q}, \ldots,
+						\mathbf{Q})\\
+						\mathcal{R} &= \text{diag}(\mathbf{R},
+						\ldots, \mathbf{R})
+						\end{aligned}
+						\]
+						</p>
+					</div>
+
+					<div class="column">
+						<h2 style="text-align: center;">Sparse Formulation</h2>
+						<p style="text-align: center;" data-id="sparse-formulation">
+						Introduce vectorized notation:
+						\[
+						\begin{aligned}
+						\delta \mathbf{X}_k &= \begin{bmatrix}
+						\delta \mathbf{x}_k^T & \delta \mathbf{x}_{k+1}^T & \ldots & \delta
+						\mathbf{x}_{k+N-1}^T
+						\end{bmatrix}^T\\
+						\delta \mathbf{U}_k &= \begin{bmatrix}
+						\delta \mathbf{u}_k^T & \delta \mathbf{u}_{k+1}^T & \ldots & \delta
+						\mathbf{u}_{k+N-1}^T
+						\end{bmatrix}^T
+						\end{aligned}
+						\]
+						so that
+						\[
+						\delta \mathbf{X}_k = \mathcal{A} \delta \mathbf{X}_k + \mathcal{B} \delta \mathbf{U}_k + \mathcal{D}	 \delta \mathbf{x}_k
+						\]
+						(see Report Appendix A$3$ for $\mathcal{A}$, $\mathcal{B}$, and $\mathcal{D}$)<br>
+						<br>
+						Then introduce also:
+						\[
+						\begin{aligned}
+						\mathcal{Q} = \text{diag}(\mathbf{Q}, \ldots,
+						\mathbf{Q}), &\quad 
+						\mathcal{R} = \text{diag}(\mathbf{R}, \ldots,
+						\mathbf{R})\\
+						\text{and} \quad \mathbf{V} &= \begin{bmatrix}
+		\mathcal{Q} & \mathbf{0}\\
+		\mathbf{0} & \mathcal{R}
+	\end{bmatrix}
+						\end{aligned}
+						\]
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+		<!------->
+		<section data-transition="slide" data-auto-animate>
+			<h1 class="slide-title">Dense & Sparse Formulations</h1>
+
+			<div class="slide-body">
+
+				<div class="multi-column">
+
+					<div class="column"
+						 style="width: 50%; 
+								border-right: 1px solid var(--primary); 
+								margin-right: 20px;
+								">
+						<h2 style="text-align: center;">Dense Formulation</h2>
+						<p style="text-align: center;" data-id="dense-formulation">
+						Rewrite cost function:
+						\[
+	\begin{aligned}
+		\mathbf{J} &= \Delta \mathbf{X}_k^T \mathcal{Q} \Delta \mathbf{X}_k + \Delta \mathbf{U}_k^T
+	\mathcal{R} \Delta \mathbf{U}_k\\
+				 & = \left( \mathbf{X}_k - \mathbf{X}_{\text{ref},k} \right)^T
+				 \mathcal{Q} \left( \mathbf{X}_k - \mathbf{X}_{\text{ref},k} \right) +
+				 \ldots\\
+				 & \quad \ldots +
+				 \left( \mathbf{U}_k - \mathbf{U}_{\text{ref},k} \right)^T \mathcal{R}
+				 \left( \mathbf{U}_k - \mathbf{U}_{\text{ref},k} \right)\\
+				 &= \mathbf{U}_k^T \left(
+						\mathcal{B}^T \mathcal{Q} \mathcal{B} + \mathcal{R}
+					\right) \mathbf{U}_k 
+					+ 2 \big(
+						\mathbf{x}_k^T \mathcal{A}^T \mathcal{Q} \mathcal{B} +
+						\ldots\\
+						& \quad \ldots
+						+ \mathcal{D}^T \mathcal{Q} \mathcal{B}
+						- \bar{\mathbf{X}}_k^T \mathcal{Q} \mathcal{B}
+						- \bar{\mathbf{U}}_k^T \mathcal{R}
+					\big) \mathbf{U}_k\\
+				 &= \mathbf{U}_k^T \mathbf{H}_k \mathbf{U}_k + 2 \mathbf{f}_k^T \mathbf{U}_k
+	\end{aligned}
+	\]
+						</p>
+					</div>
+
+					<div class="column">
+						<h2 style="text-align: center;">Sparse Formulation</h2>
+						<p style="text-align: center;" data-id="sparse-formulation">
+						Introduce augmented vector variables:
+						\[
+	\mathbf{Z}_k = \begin{bmatrix}
+		\mathbf{X}_k\\
+		\mathbf{U}_k
+	\end{bmatrix}
+	\quad \text{and} \quad
+	\mathbf{Z_{\text{ref},k}} = \begin{bmatrix}
+		\mathbf{X}_{\text{ref},k}\\
+		\mathbf{U}_{\text{ref},k}
+	\end{bmatrix}
+						\]
+						Rewrite cost function:
+						\[
+	\begin{aligned}
+		\mathbf{J} &= \Delta \mathbf{X}_k^T \mathcal{Q} \Delta \mathbf{X}_k + \Delta \mathbf{U}_k^T
+	\mathcal{R} \Delta \mathbf{U}_k\\
+				&= \Delta \mathbf{Z}_k^T \mathbf{V} \Delta \mathbf{Z}_k\\
+				&= \left( \mathbf{Z}_k - \mathbf{Z}_{\text{ref},k} \right)^T \mathbf{V}
+				\left( \mathbf{Z}_k - \mathbf{Z}_{\text{ref},k} \right)\\
+				&= \mathbf{Z}_k^T \mathbf{V} \mathbf{Z}_k + 2 \left( -
+				\mathbf{Z}_{\text{ref},k}^T \mathbf{V} \right) \mathbf{Z}_k\\
+				&= \mathbf{Z}_k^T \mathbf{H}_k \mathbf{Z}_k + 2 \tilde{\mathbf{f}}_k^T \mathbf{Z}_k
+	\end{aligned}
+						\]
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+		<!------->
+		<section data-transition="slide" data-auto-animate>
+			<h1 class="slide-title">Dense & Sparse Formulations</h1>
+
+			<div class="slide-body">
+
+				<div class="multi-column">
+
+					<div class="column"
+						 style="width: 50%; 
+								border-right: 1px solid var(--primary); 
+								margin-right: 20px;
+								">
+						<h2 style="text-align: center;">Dense Formulation</h2>
+						<p style="text-align: center;" data-id="dense-formulation">
+						Constraints with $\boldsymbol{\varepsilon} =
+						\begin{bmatrix} +1 & -1 \end{bmatrix}^T$:
+						\[
+						\boldsymbol{\varepsilon} \mathbf{x}_k \leq \mathbf{f}_{\mathbf{x}} = \begin{bmatrix}
+						\mathbf{x}_{\max}\\
+						\mathbf{x}_{\min}
+						\end{bmatrix}
+						\text{ and }
+						\boldsymbol{\varepsilon} \mathbf{u}_k \leq \mathbf{f}_{\mathbf{u}} = \begin{bmatrix}
+						\mathbf{u}_{\max}\\
+						\mathbf{u}_{\min}
+						\end{bmatrix}
+						\]
+						Hence:
+						\[
+						\mathcal{E}_{\mathbf{x}} = \mathcal{E}_{\mathbf{u}} = \text{diag}(\boldsymbol{\varepsilon}), 
+						\,
+						\mathcal{F}_{\mathbf{x}} = \begin{bmatrix}
+						\mathbf{f}_{\mathbf{x}}\\
+						\vdots\\
+						\mathbf{f}_{\mathbf{x}}
+						\end{bmatrix},
+						\,
+						\mathcal{F}_{\mathbf{u}} = \begin{bmatrix}
+						\mathbf{f}_{\mathbf{u}}\\
+						\vdots\\
+						\mathbf{f}_{\mathbf{u}}
+						\end{bmatrix}
+						\]
+						which leads to:
+						\[
+						\mathcal{E} \mathbf{U}_k \leq \mathcal{F}
+						\]
+						\[
+						\mathcal{E} = \begin{bmatrix}
+						\mathcal{E}_{\mathbf{u}}\\
+						\mathcal{E}_{\mathbf{x}} \mathcal{B}
+						\end{bmatrix}
+						\text{ and }
+						\mathcal{F} = \begin{bmatrix}
+						\mathcal{F}_{\mathbf{u}}\\
+						\mathcal{F}_{\mathbf{x}} - \mathcal{E}_{\mathbf{x}} (\mathcal{A} \mathbf{x}_k + \mathcal{D})
+						\end{bmatrix}
+						\]
+						</p>
+					</div>
+
+					<div class="column">
+						<h2 style="text-align: center;">Sparse Formulation</h2>
+						<p style="text-align: center;" data-id="sparse-formulation">
+						<b>Inequality constraints</b> (same notation):
+						\[
+						\mathcal{E}_{\mathbf{Z}} \mathbf{Z}_k \leq \mathcal{F}_{\mathbf{Z}}
+						\]
+						where
+						\[
+						\mathcal{E}_{\mathbf{Z}} = \begin{bmatrix}
+						\mathcal{E}_{\mathbf{x}} & \mathbf{0}\\
+						\mathbf{0} & \mathcal{E}_{\mathbf{u}}
+						\end{bmatrix}
+						\quad \text{and} \quad
+						\mathcal{F}_{\mathbf{Z}} = \begin{bmatrix}
+						\mathcal{F}_{\mathbf{x}}\\
+						\mathcal{F}_{\mathbf{u}}
+						\end{bmatrix}
+						\]
+						<b>Equality constraints</b>:
+						\[
+						\begin{bmatrix}
+						\mathbb{I} - \mathcal{A} & -\mathcal{B}
+						\end{bmatrix}
+						\delta \mathbf{Z}_k = \mathcal{D} \delta \mathbf{x}_k
+						\Rightarrow
+						\mathcal{E}_{\text{eq.}} \mathbf{Z}_k = \mathcal{F}_{\text{eq.}}
+						\]
+						where
+						\[
+						\begin{aligned}
+						\mathcal{E}_{\text{eq.}} &= \begin{bmatrix}
+						\mathbb{I} - \mathcal{A} & -\mathcal{B}
+						\end{bmatrix}\\
+						\mathcal{F}_{\text{eq.}} &= \mathcal{D} \delta \mathbf{x}_k + \begin{bmatrix}
+						\mathbb{I} - \mathcal{A} & -\mathcal{B}
+						\end{bmatrix} \bar{\mathbf{Z}}_k
+						\end{aligned}
+						\]
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+		<!------->
+		<section data-transition="slide" data-auto-animate>
+			<h1 class="slide-title">Dense & Sparse Formulations</h1>
+
+			<div class="slide-body">
+
+				<div class="multi-column">
+
+					<div class="column"
+						 style="width: 50%; 
+								border-right: 1px solid var(--primary); 
+								margin-right: 20px;
+								">
+						<h2 style="text-align: center;">Dense Formulation</h2>
+						<p style="text-align: center;
+								  margin-bottom: 63px;" 
+							data-id="dense-formulation">
+						Final QP problem:
 						\[
 						\begin{aligned}
 						\min_{\mathbf{U}_k} \quad & \mathbf{U}_k^T \mathbf{H}_k \mathbf{U}_k + 2 \mathbf{f}_k^T
@@ -795,19 +1163,23 @@ end
 						\end{aligned}
 						\]
 						</p>
-						<p>
-							<ul>
-								<li> QP problem</li>
-								<li> decision variables: $\mathbf{U}_k$
-									<b>control inputs</b></li>
-								<li> <b>only inequality</b> constraints</li>
-							</ul>
-						</p>
+						<div class="fragment" data-fragment-index="1">
+							<p>
+								<ul>
+									<li> QP problem</li>
+									<li> decision variables: $\mathbf{U}_k$
+										<b>control inputs</b></li>
+									<li> <b>only inequality</b> constraints</li>
+								</ul>
+							</p>
+						</div>
 					</div>
 
 					<div class="column">
 						<h2 style="text-align: center;">Sparse Formulation</h2>
-						<p>
+						<p style="text-align: center;"
+							data-id="sparse-formulation">
+						Final QP problem:
 						\[
 						\begin{aligned}
 						\min_{\mathbf{Z}_k} \quad & \mathbf{Z}_k^T \mathbf{V} \mathbf{Z}_k + 2
@@ -818,27 +1190,21 @@ end
 						\end{aligned}
 						\]
 						</p>
-						<p>
-							<ul>
-								<li> QP problem</li>
-								<li> more decision variables: $\mathbf{Z}_k =
-									\begin{bmatrix} \mathbf{X}_k & \mathbf{U}_k
-									\end{bmatrix}^T$ </li>
-								<li> <b>equality and inequality</b> constraints</li>
-								<li> better for solver (sparsity)</li>
-							</ul>
-						</p>
+						<div class="fragment" data-fragment-index="1">
+							<p>
+								<ul>
+									<li> QP problem</li>
+									<li> more decision variables: $\mathbf{Z}_k =
+										\begin{bmatrix} \mathbf{X}_k & \mathbf{U}_k
+										\end{bmatrix}^T$ </li>
+									<li> <b>equality and inequality</b> constraints</li>
+									<li> better for solver (sparsity)</li>
+								</ul>
+							</p>
+						</div>
 					</div>
-
 				</div>
-
 			</div>
-
-			<!-- TODO: Just report final formulas -->
-			<!-- Highlight advantages and differences only: inequalities, better for -->
-			<!-- solvers, decision variables, which is easier to implement, etc. -->
-			<!-- Leave derivation as extra appendix or link to report -->
-			<!-- Maybe: show code implementation...(maybe too long) -->
 		</section>
 
 		<!-- Slide 10: MPC Pseudocode ---------------------------------------->
