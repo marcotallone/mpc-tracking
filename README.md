@@ -32,7 +32,7 @@ and Extended Kalman Filter (EKF)</h2>
     <br />
     <table>
       <tr>
-        <td><a href="//TODO:add link"><strong>Presentation</strong></a></td>
+        <td><a href="https://marcotallone.github.io/mpc-tracking/"><strong>Presentation</strong></a></td>
         <td><a href="./report/main.pdf"><strong>Report</strong></a></td>
         <td><a href="./scripts/example.m"><strong>Usage Example</strong></a></td>
       </tr>
@@ -137,7 +137,7 @@ The project is developed in `MATLAB` version `24.2.0 (R2024b)` [<a href="#ref5">
 
 ### Project Structure
 
-A complete theoretical description of the implemented models and algorithms can be found formalized in the [report](./report/main.pdf) or pesented in the animated [presentation](//TODO:...) of this repository. Technical implementation details are also provided in section [Implementation Details](#implementation-details) below or can be accessed at any moment using the `help` function in the MATLAB command window.\
+A complete theoretical description of the implemented models and algorithms can be found formalized in the [report](./report/main.pdf) or pesented in the animated [presentation](https://marcotallone.github.io/mpc-tracking/) of this repository. Technical implementation details are also provided in section [Implementation Details](#implementation-details) below or can be accessed at any moment using the `help` function in the MATLAB command window.\
 The rest of the project is structured as follows:
 
 ```bash
