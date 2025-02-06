@@ -23,7 +23,7 @@ and Extended Kalman Filter (EKF)</h2>
 <h4 align="center">2024-2025</h4>
 
   <!-- Insert gif image herew -->
-  <img src="./images/unicycle_MPC.gif" alt="Image" width="700"/>
+  <img src="./images/unicycle_MPC_origin.gif" alt="Image" width="450"/>
 
   <p align="center">
     Implementation of a non-linear Model Predictive Control (MPC) algorithm for reference traking<br>
@@ -123,10 +123,17 @@ with the ones presented by *Kunz, Huck and Summers* [<a href="#ref5">1</a>]
 their work on the tracking of a helicopter model.\
 The project is developed in `MATLAB` version `24.2.0 (R2024b)` [<a href="#ref5">5</a>].
 
-<!-- //TODO: add gifs -->
-<!-- <div style="text-align: center;">
-  <img src="./report/images/visual-words.jpg" alt="Image" width="400"/>
-</div> -->
+<div style="display: flex; justify-content: center;">
+  <figure style="margin: 10px; text-align: center;">
+    <img src="./images/unicycle_MPC.gif" style="width: 400px;"/>
+    <figcaption>MPC simulation without noise</figcaption>
+  </figure>
+  <figure style="margin: 10px; text-align: center;">
+    <img src="./images/unicycle_MPC_noise.gif" style="width: 400px;"/>
+    <figcaption>MPC simulation with noise and EKF</figcaption>
+  </figure>
+</div>
+
 
 ### Project Structure
 
@@ -387,7 +394,7 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-- [Modelling and Control of Cyberphysical Systems II Course (UniTS, Fall 2024)](https://dsai.units.it/index.php/courses/modelling-and-control-of-cyber-physical-systems-ii/) (*access restricted to UniTS students and staff*)
+- [Modelling and Control of Cyber-Physical Systems II Course (UniTS, Fall 2024)](https://dsai.units.it/index.php/courses/modelling-and-control-of-cyber-physical-systems-ii/) (*access restricted to UniTS students and staff*)
 - [Best-README-Template](https://github.com/othneildrew/Best-README-Template?tab=readme-ov-file): for the README template
 - [Flaticon](https://www.flaticon.com/free-icon/track_7171906): for the icons used in the README
 
