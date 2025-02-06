@@ -712,7 +712,6 @@ classdef MPC < handle
 			fprintf("         State MSE = %f,          Input MSE = %f\n", MSE_x, MSE_u);
 			fprintf("Weighted State MSE = %f, Weighted Input MSE = %f\n", wMSE_x, wMSE_u);
 
-
 			
 			% ------------------------------------------------------------------------------- cut
 
