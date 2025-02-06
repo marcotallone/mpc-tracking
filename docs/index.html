@@ -37,6 +37,7 @@
 
 		<!-- Slide 1: Title -------------------------------------------------->
 		<section 
+			 data-transition="fade"
 			 data-background-video="./images/topographic-background-cmp.mp4"
 			 data-background-video-loop 
 			 data-background-video-muted 
@@ -45,7 +46,7 @@
 		>
 
 			<!-- Main Title -->
-			<div class="main-title-container">
+			<div class="main-title-container" data-id="title-container">
 				<h1>Non-linear Reference Tracking<br>
 					via Model Predictive Control (MPC)<br>
 					and Extended Kalman Filter (EKF)</h1>
@@ -77,41 +78,58 @@
 		</section>
 
 		<!-- Slide 2: Objectives and ToC ------------------------------------->
-		<section data-state="hide-menubar hide-menu"
-				 data-background-color="var(--primary)">
+		<section 
+			 data-background-video="./images/topographic-background-cmp.mp4"
+			 data-background-video-loop 
+			 data-background-video-muted 
+			 data-background-opacity="1"
+			 data-state="hide-menubar hide-menu"
+		>
 
 			<h1 class="slide-title">Introduction</h1>
 
-			<br>
 
 			<div class="slide-body">
 
-				<h2>Objectives</h2>
-				<p>
-				<ul>
-					<li>Implement a Model Predictive Controller (MPC) for
-						non-linear systems</li>
-					<li>Implement an Extended Kalman Filter (EKF) for 
-						state estimation</li>
-					<li>Reproduce results by 
-						<i>Kunz, Huck and Summers</i> [<a href="#ref1">1</a>]
-						on a miniature helicopter
-					</li>
-				</ul>
-				</p>
-
 				<br>
 
-				<h2 style="margin-bottom: 0px;">Table of Contents</h2>
-				<!-- <small> -->
-<ol>
+				<h2>Objectives</h2>
+				<ul>
+					<li>Implement a Model Predictive Controller (MPC) for
+						non-linear systems (in <code style="color:
+													 var(--primary); font-weight: bold;">MATLAB</code>)</li>
+					<li>Implement an Extended Kalman Filter (EKF) for 
+						state estimation (in <code style="color:
+													 var(--primary); font-weight: bold;">MATLAB</code>)</li>
+					<li>Reproduce results by 
+						<span style="font-style: italic;">Kunz, Huck and
+							Summers</span> [<a href="#ref1">1</a>]
+						on a miniature helicopter
+					</li>
+					<li>Test and validate the implementation on different models
+					and trajectories</li>
+				</ul>
+
+				<br>
+				<br>
+
+				<div class="cbox" 
+					style="background-color: var(--primary);
+						   text-align: center;
+						   color: white;
+						   padding: 30px;
+						   font-size: 1em;
+					">
+				<h2 style="color: white;">Table of Contents</h2>
+				<ol class="spaced-list">
 					<li>Non-Linear Models</li>
 					<li>Trajectory Generation Mehtods</li>
 					<li>MPC Problem Formulation</li>
 					<li>Extended Kalman Filter</li>
 					<li>Validation and Results</li>
 				</ol>
-				<!-- </small> -->
+				</div>
+
 			</div>
 			
 		</section>
@@ -126,71 +144,6 @@
 			</section>
 
 		<!-- Slide 3: Non-linear Models -------------------------------------->
-		<!-- <section data-transition="slide"> -->
-		<!-- 	<h1 class="slide-title">Non-Linear Models</h1> -->
-		<!---->
-		<!-- 	<div class="slide-body"> -->
-		<!---->
-		<!-- 		<div class="multi-column"> -->
-		<!---->
-		<!-- 			Unicycle -->
-		<!-- 			<div class="column"  -->
-		<!-- 				 style="width: 30%;  -->
-		<!-- 						border-right: 1px solid var(--primary);  -->
-		<!-- 						padding-right: 10px; -->
-		<!-- 						margin-right: 10px; -->
-		<!-- 			"> -->
-		<!-- 				<h2 style="text-align: center;">Unicycle Model</h2> -->
-		<!-- 				<p> -->
-		<!-- 				\[ -->
-		<!-- 				\begin{cases} -->
-		<!-- 				\dot{x} = \frac{r}{2} (\omega_1 + \omega_2) \cos(\theta)\\ -->
-		<!-- 				\dot{y} = \frac{r}{2} (\omega_1 + \omega_2) \sin(\theta)\\ -->
-		<!-- 				\dot{\theta} = \frac{r}{L} (\omega_1 - \omega_2) -->
-		<!-- 				\end{cases} -->
-		<!-- 				\] -->
-		<!-- 				</p> -->
-		<!-- 				<p style="font-size: 0.8em;"> -->
-		<!-- 				State: $ \mathbf{x}(t) = \begin{bmatrix} x(t) & y(t) & \theta(t) \end{bmatrix}^T $ -->
-		<!-- 				<br> -->
-		<!-- 				Input: $ \mathbf{u}(t) = \begin{bmatrix} \omega_1(t) & \omega_2(t) \end{bmatrix}^T $     -->
-		<!-- 				</p> -->
-		<!-- 				<img src="./images/unicycle-model.png" style="width: 80%;"> -->
-		<!---->
-		<!-- 			</div> -->
-		<!---->
-		<!-- 			Helicopter -->
-		<!-- 			<div class="column;" style="width: 69%;"> -->
-		<!-- 				<h2 style="text-align: center;">Helicopter Model</h2> -->
-		<!-- 				<p> -->
-		<!-- 				\[ -->
-		<!-- 				\begin{cases} -->
-		<!-- 				\dot{x}_I = cos(\psi) \dot{x}_B - sin(\psi) \dot{y}_B\\ -->
-		<!-- 				\dot{y}_I = sin(\psi) \dot{x}_B + cos(\psi) \dot{y}_B\\ -->
-		<!-- 				\dot{z}_I = \dot{z}_B\\ -->
-		<!-- 				\ddot{x}_B = b_x u_x + k_x \dot{x}_B + \dot{\psi} \dot{y}_B\\ -->
-		<!-- 				\ddot{y}_B = b_y u_y + k_y \dot{y}_B - \dot{\psi} \dot{x}_B\\ -->
-		<!-- 				\dot{z}_B = b_z u_z - g\\ -->
-		<!-- 				\dot{\psi} = \dot{\psi}\\ -->
-		<!-- 				\ddot{\psi} = b_{\psi} u_{\psi} + k_{\psi} \dot{\psi} -->
-		<!-- 				\end{cases} -->
-		<!-- 				\] -->
-		<!-- 				</p> -->
-		<!-- 				<p style="font-size: 0.8em;"> -->
-		<!-- 				State: $ \mathbf{x}(t) = \begin{bmatrix} x_I(t) & y_I(t) & z_I(t) & \dot{x}_B(t) & \dot{y}_B(t) & \dot{z}_B(t) & \psi(t) & \dot{\psi}(t) \end{bmatrix}^T $ -->
-		<!-- 				<br> -->
-		<!-- 				Input: $ \mathbf{u}(t) = \begin{bmatrix} u_x(t) & u_y(t) & -->
-		<!-- 				u_z(t) & u_{\psi}(t) \end{bmatrix}^T $ -->
-		<!-- 				</p> -->
-		<!-- 			</div> -->
-		<!---->
-		<!-- 		 TODO: maybe add code implementation with animations and for --> -->
-		<!-- 		helicopter also assumptions with warning box --> 
-		<!---->
-		<!-- 	</div> -->
-		<!-- 	 -->
-		<!-- </section> -->
-
 		<section data-transition="slide">
 			<h1 class="slide-title">Unicycle Model</h1>
 
@@ -686,14 +639,14 @@ end
 				<div class="multi-column">
 					<div class="column" style="width: 45%;">
 						<div class="cbox" style="text-align: center; padding:
-									10px;">
+									5px;">
 							Non-linear dynamics $\quad \mathbf{\dot{x}}(t) =
 							\mathbf{f}(\mathbf{x}(t), \mathbf{u}(t))$
 						</div>
 					</div>
 					<div class="column" style="width: 45%;">
 						<div class="cbox" style="text-align: center; padding:
-									10px;">
+									5px;">
 							Flat outputs $\quad \mathbf{z}(t)$
 						</div>
 					</div>
@@ -870,6 +823,7 @@ end
 		<!-- Slide 9: Dense & Sparse Formulations ---------------------------->
 
 		<section data-transition="slide" data-auto-animate>
+			<a id="dense-and-sparse-link"></a>
 			<h1 class="slide-title">Dense & Sparse Formulations</h1>
 
 			<div class="slide-body">
@@ -900,7 +854,8 @@ end
 						\[
 						\mathbf{X}_k = \mathcal{A} \mathbf{x}_k + \mathcal{B} \mathbf{U}_k + \mathcal{D}	
 						\]
-						(see Report Appendix A$2$ for $\mathcal{A}$,
+						(see <a href="#appendix1">Appendix $1$</a>
+						for $\mathcal{A}$,
 						$\mathcal{B}$, and $\mathcal{D}$)<br>
 						<br>
 						Then introduce also:
@@ -935,7 +890,8 @@ end
 						\[
 						\delta \mathbf{X}_k = \mathcal{A} \delta \mathbf{X}_k + \mathcal{B} \delta \mathbf{U}_k + \mathcal{D}	 \delta \mathbf{x}_k
 						\]
-						(see Report Appendix A$3$ for $\mathcal{A}$, $\mathcal{B}$, and $\mathcal{D}$)<br>
+						(see <a href="#appendix2">Appendix $2$</a>
+						for $\mathcal{A}$, $\mathcal{B}$, and $\mathcal{D}$)<br>
 						<br>
 						Then introduce also:
 						\[
@@ -1587,9 +1543,22 @@ function [x, u] = optimize(obj)
 
 		<!-- Slide 15: Results 1 --------------------------------------------->
 		<section data-transition="slide">
-			<h1 class="slide-title">Results Experiments $1$ and $2$</h1>
+			<h1 class="slide-title"> Results Experiments $1$ and $2$ </h1>
 
-			<div class="slide-body">
+			<div class="slide-body" style="transform: translateY(-30px);">
+
+				<p>
+					Assessment metric: <b>Root Mean Squared Error (RMSE)</b>
+					\[
+					\text{RMSE}(\mathbf{x}) = \sqrt{\frac{1}{N_{\text{guide}}}
+					\sum_{i=1}^{N_{\text{guide}}}
+					|| \mathbf{x}_i - \mathbf{x}_{\text{ref}, i} ||_2^2}
+					\quad \text{and} \quad
+					\text{RMSE}(\mathbf{u}) = \sqrt{\frac{1}{N_{\text{guide}}}
+					\sum_{i=1}^{N_{\text{guide}}}
+					|| \mathbf{u}_i - \mathbf{u}_{\text{ref}, i} ||_2^2}
+					\]
+				</p>
 
 				<table class="latex-table">
 
@@ -1653,7 +1622,41 @@ function [x, u] = optimize(obj)
 			</div>
 		</section>
 
-		<!-- Slide 16: Results 2 --------------------------------------------->
+		<!-- Slide 17: Results No Noise Animations --------------------------->
+		<section data-transition="slide">
+			<h1 class="slide-title"> Results Experiments $1$ and $2$ </h1>
+
+			<div class="slide-body">
+				<p>
+				Simulations without noise (<i>Unicycle</i>)
+				</p>
+				<div class="section-title-container" style="height: 85%;">
+					<img src="./images/unicycle_MPC.gif" 
+					style="height: 400px; border: 1px solid black;">
+					<img src="./images/unicycle_MPC_lemniscate.gif" 
+					style="height: 400px; width: 700px; border: 1px solid black;">
+				</div>
+			</div>
+		</section>
+
+		<!-- Slide 18: Results Noise Animations ------------------------------>
+		<section data-transition="slide">
+			<h1 class="slide-title"> Results Experiments $1$ and $2$ </h1>
+
+			<div class="slide-body">
+				<p>
+				Simulations with noise (<i>Unicycle</i>)
+				</p>
+				<div class="section-title-container" style="height: 85%;">
+					<img src="./images/unicycle_MPC_noise.gif"
+					style="height: 400px; border: 1px solid black;">
+					<img src="./images/unicycle_MPC_lemniscate_noise.gif"
+					style="height: 400px; width: 700px; border: 1px solid black;">
+				</div>
+			</div>
+		</section>
+
+		<!-- Slide 19: Results 2 --------------------------------------------->
 		<section data-transition="slide">
 			<h1 class="slide-title">Results Experiment $3$</h1>
 
@@ -1661,9 +1664,6 @@ function [x, u] = optimize(obj)
 				<img src="./images/unicycle-horizon.png" style="width: 50%;">
 				<img src="./images/helicopter-horizon.png" style="width: 50%;">
 			</div>
-			<!-- <div class="slide-body"> -->
-			<!---->
-			<!-- </div> -->
 		</section>
 
 		</section>
@@ -1729,6 +1729,87 @@ function [x, u] = optimize(obj)
 			</div>
 		</section>
 
+		<!-- Section: Appendix -----------------.--------------------------->
+		<section data-name="Appendix 1" data-sm="false">
+			<a id="appendix1"></a>
+			<h1 class="slide-title">Appendix $1$: Dense Formulation matrices</h1>
+
+			<div class="slide-body">
+
+				\[
+				\begin{aligned}
+				\mathcal{A} &= \begin{bmatrix}
+				\mathbb{I}\\
+				\mathbf{A}_{d,k}\\
+				\mathbf{A}_{d,k+1} \mathbf{A}_{d,k}\\
+				\vdots\\
+				\mathbf{A}_{d,k+N-2} \ldots \mathbf{A}_{d,k}
+				\end{bmatrix}\\ 
+				\mathcal{B} &= \begin{bmatrix}
+				\mathbf{0} & \mathbf{0} & \ldots & \mathbf{0} & \mathbf{0}\\
+				\mathbf{B}_{d,k} & \mathbf{0} & \ldots & \mathbf{0} & \mathbf{0}\\
+				\mathbf{A}_{d,k+1} \mathbf{B}_{d,k} & \mathbf{B}_{d,k+1} & \ldots & \mathbf{0} & \mathbf{0}\\
+				\vdots & \vdots & \ddots & \vdots\\
+				\mathbf{A}_{d,k+N-2} \ldots \mathbf{A}_{d,k} \mathbf{B}_{d,k} & \ldots & \ldots &
+				\mathbf{B}_{d,k+N-2} & \mathbf{0}
+				\end{bmatrix}\\
+				\text{and}\quad \mathcal{D} &= \begin{bmatrix}
+				\mathbf{0}\\
+				\mathbf{d}_k\\
+				\mathbf{A}_{d,k+1} \mathbf{d}_k + \mathbf{d}_{k+1}\\
+				\mathbf{A}_{d,k+2} \mathbf{A}_{d,k+1} \mathbf{d}_k + \mathbf{A}_{d,k+2}
+				\mathbf{d}_{k+1} + \mathbf{d}_{k+2}\\
+				\vdots
+				\end{bmatrix}
+				\end{aligned}
+				\]
+
+			<div>
+				<a href="#dense-and-sparse-link" class="back-button">Back to <b>Dense & Sparse
+						Formulations</b></a>
+			</div>
+
+			</div>
+		</section>
+		<section data-name="Appendix 2" data-sm="false">
+			<a id="appendix2"></a>
+			<h1 class="slide-title">Appendix $2$: Sparse Formulation matrices</h1>
+
+			<div class="slide-body">
+
+				\[
+				\begin{aligned}
+				\mathcal{A} &= \begin{bmatrix}
+				\mathbf{0} & \mathbf{0} & \ldots & \mathbf{0} & \mathbf{0}\\
+				\mathbf{A}_{d,k} & \mathbf{0} & \ldots & \mathbf{0} & \mathbf{0}\\
+				\mathbf{0} & \mathbf{A}_{d,k+1} & \ldots & \mathbf{0} & \mathbf{0}\\
+				\vdots & \vdots & \ddots & \vdots\\
+				\mathbf{0} & \mathbf{0} & \ldots & \mathbf{A}_{d,k+N-1} & \mathbf{0}
+				\end{bmatrix}\\
+				\mathcal{B} &= \begin{bmatrix}
+				\mathbf{0} & \mathbf{0} & \ldots & \mathbf{0} & \mathbf{0}\\
+				\mathbf{B}_{d,k} & \mathbf{0} & \ldots & \mathbf{0} & \mathbf{0}\\
+				\mathbf{0} & \mathbf{B}_{d,k+1} & \ldots & \mathbf{0} & \mathbf{0}\\
+				\vdots & \vdots & \ddots & \vdots\\
+				\mathbf{0} & \mathbf{0} & \ldots & \mathbf{B}_{d,k+N-1} & \mathbf{0}
+				\end{bmatrix}\\
+				\mathcal{D} &= \begin{bmatrix}
+				\mathbb{I}\\
+				\mathbf{0}\\
+				\vdots\\
+				\mathbf{0}\\
+				\end{bmatrix}
+				\end{aligned}
+				\]
+
+				<div>
+					<a href="#dense-and-sparse-link" class="back-button">Back to <b>Dense & Sparse
+							Formulations</b></a>
+				</div>
+
+			</div>
+		</section>
+
 
 		<!-- End of slides -->
 		</div>
@@ -1751,6 +1832,8 @@ function [x, u] = optimize(obj)
 				// General configuration settings
 				transition: 'fade',
 				backgroundTransition: 'fade',
+				hideInactiveCursor: true,
+				hideCursorTime: 900,
 
 				// INFO: Simplemenu Top Bar
 				// https://github.com/Martinomagnifico/reveal.js-simplemenu

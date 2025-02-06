@@ -104,6 +104,10 @@ section {
 	/* background-color: red; */
 }
 
+.slide-body i {
+	font-style: italic;
+}
+
 
 /* Boxes and Containers */
 .cbox {
@@ -114,6 +118,7 @@ section {
 	color: black;
 	font-size: 0.8em;
 	width: 95%;
+	box-shadow: 3px 1px 10px rgba(0,0,0,0.4);
 }
 
 .cbox i {
@@ -130,6 +135,23 @@ section {
 
 .column {
   flex: 1;
+}
+
+.spaced-list li {
+	margin-bottom: 10px;
+	font-weight: bold;
+}
+
+
+.back-button {
+	display: inline-block;
+	padding: 5px 10px;
+	font-size: 1em;
+	color: var(--primary);
+	border: none;
+	border-radius: 3px;
+	text-decoration: none;
+	text-align: center;
 }
 
 
