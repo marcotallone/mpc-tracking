@@ -126,12 +126,10 @@ The project is developed in `MATLAB` version `24.2.0 (R2024b)` [<a href="#ref5">
 <div style="display: flex; justify-content: center;">
   <figure style="margin: 10px; text-align: center;">
     <img src="./images/unicycle_MPC.gif" style="width: 80%;"/>
-    <br>
     <figcaption>MPC simulation without noise</figcaption>
   </figure>
   <figure style="margin: 10px; text-align: center;">
     <img src="./images/unicycle_MPC_noise.gif" style="width: 80%;"/>
-    <br>
     <figcaption>MPC simulation with noise and EKF</figcaption>
   </figure>
 </div>
