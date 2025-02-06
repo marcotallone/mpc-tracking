@@ -37,7 +37,7 @@ max_start = 0.05;
 % % Lemniscate trajectory
 % N_guide = 100;
 % a = 1;
-% shape = "leminscate";
+% shape = "lemniscate";
 % [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
 % max_start = 0.05;
 
@@ -95,7 +95,7 @@ mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, d
 [x, u] = mpc.optimize();
 
 
-% Plot
+% Plot ─────────────────────────────────────────────────────────────────────────
 
 % Main trajectory plot
 figure(1);
@@ -117,7 +117,7 @@ xlabel('x'); ylabel('y');
 grid on;
 axis equal;
 hold on;
-% 
+
 % % Set plot limits
 % xlim([-0.6, 0.6]);
 % ylim([-0.6, 0.6]);
@@ -152,32 +152,43 @@ end
 % % GIF ──────────────────────────────────────────────────────────────────────────
 % % Main trajectory plot
 % figure(1);
-% filename = 'images/unicycle_MPC.gif'; % Output GIF filename
-% 
+% filename = 'images/unicycle_output.gif'; % Output GIF filename
+
 % % Reference trajectory
 % ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
 % hold on;
-% arrow_length = 0.03;
+% arrow_length = 0.02;
 % for i = 1:length(x_ref)
 %     x_arrow = arrow_length * cos(x_ref(i, 3));
 %     y_arrow = arrow_length * sin(x_ref(i, 3));
 %     quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
 % end
-% legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
-% 
+% % legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
+
 % % Labels
 % title('Trajectory Tracking with MPC (Non-Linear Unicycle System)');
 % xlabel('x'); ylabel('y');
 % grid on;
 % axis equal;
 % hold on;
-% 
+% axis tight; % Adjust axis limits to fit the data tightly
+% hold on;
+
+% % Set plot limits
+% % xlim([-1.5, 1.5]);
+% xlim([-0.6, 0.6]);
+% ylim([-0.6, 0.6]);
+% hold on;
+
+% % Adjust figure to fit tightly around the plot
+% set(gca, 'LooseInset', get(gca, 'TightInset'));
+
 % % Capture initial frame for GIF
-% frame = getframe(gcf);
+% frame = getframe(gca);
 % img = frame2im(frame);
 % [imind, cm] = rgb2ind(img, 256); 
-% imwrite(imind, cm, filename, 'gif', 'Loopcount', inf, 'DelayTime', 0.05);
-% 
+% imwrite(imind, cm, filename, 'gif', 'Loopcount', inf, 'DelayTime', 0.1);
+
 % % Real trajectory animation and GIF capture
 % for i = 1:Nsteps
 %     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
@@ -189,15 +200,15 @@ end
 %     hold on;
 %     target = scatter(x_ref(i, 1), x_ref(i, 2), 20, 'filled', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', 'red');
 %     hold on;
-%     legend([ref_points, ref_points, x_points, target],{'Guide Points', 'Reference trajectory', 'Real trajectory', 'Target'}, 'Location', 'northwest');
+%     legend([ref_points, x_points, target],{'Reference trajectory', 'Real trajectory', 'Target'}, 'Location', 'northwest');
 %     hold on;
 %     % Capture frame for GIF
-%     frame = getframe(gcf);
+%     frame = getframe(gca);
 %     img = frame2im(frame);
 %     [imind, cm] = rgb2ind(img, 256);
-%     imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append', 'DelayTime', 0.05);
-% 
-%     pause(0.05);
+%     imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append', 'DelayTime', 0.1);
+
+%     % pause(0.05);
 %     if i < Nsteps
 %         delete(x_line);
 %         delete(target);
