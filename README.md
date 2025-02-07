@@ -80,9 +80,10 @@ and Extended Kalman Filter (EKF)</h2>
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
->[!WARNING] 
+>[!WARNING]
 >**Generative Tools Notice**:\
 > Generative AI tools have been used as a support for the development of this project. In particular, the [Copilot](https://en.wikipedia.org/wiki/Microsoft_Copilot) generative tool based on [OpenAI GPT 4o](https://en.wikipedia.org/wiki/GPT-4) model has been used as assistance medium in performing the following tasks:
+>
 > - writing documentation and comments in the implemented models for `MATLAB`'s `help` function
 > - fixing implementation bugs in the `MPC.dense_formulation()` method used to define the QP problem matrices in dense MPC formulation
 > - improving variable naming and overall code readability
@@ -134,7 +135,6 @@ The project is developed in `MATLAB` version `24.2.0 (R2024b)` [<a href="#ref5">
   </figure>
 </div>
 
-
 ### Project Structure
 
 A complete theoretical description of the implemented models and algorithms can be found formalized in the [report](./report/main.pdf) or pesented in the animated [presentation](https://marcotallone.github.io/mpc-tracking/) of this repository. Technical implementation details are also provided in section [Implementation Details](#implementation-details) below or can be accessed at any moment using the `help` function in the MATLAB command window.\
@@ -144,7 +144,7 @@ The rest of the project is structured as follows:
 .
 ├── 🖼️ images                       # Project images
 ├── ⚜️ LICENSE                      # License file
-├── 📁 presentation                 # Presentation folder
+├── 📁 docs                         # Presentation folder
 ├── 📜 README.md                    # This file
 ├── 📁 report                       # Report folder
 │   ├── images
@@ -335,6 +335,7 @@ where:
 
 >[!NOTE]
 > The `MPC` will internally look at the discretization time step `Ts` of the dynamical system model to compute the total number of iterations of the MPC algorithm. Precisely, the total number `Nsteps` of iterations is computed as
+>
 > ```matlab
 >t = 0:model.Ts:Tend;
 >Nsteps = length(t)-(N+1);
