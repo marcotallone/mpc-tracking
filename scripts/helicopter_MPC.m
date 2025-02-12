@@ -38,20 +38,20 @@ model = Helicopter(parameters, Ts, x_constraints, u_constraints, P0, Q_tilde, R_
 % (comment / uncomment the desired trajectory)
 
 
-% Circle trajectory
-N_guide = 100;
-radius = 0.5;
-shape = "circle";
-[x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, radius);
-max_start = 0.05;
-
-
-% % Lemniscate trajectory
+% % Circle trajectory
 % N_guide = 100;
-% a = 1;
-% shape = "leminscate";
-% [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
+% radius = 0.5;
+% shape = "circle";
+% [x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, radius);
 % max_start = 0.05;
+
+
+% Lemniscate trajectory
+N_guide = 100;
+a = 1;
+shape = "lemniscate";
+[x_ref, u_ref, Tend] = model.generate_trajectory(N_guide, shape, a);
+max_start = 0.05;
 
 
 % Arbitrary trajectory
@@ -92,7 +92,7 @@ Q = diag([50, 50, 5, 10, 3, 3, 1, 2]); % state cost
 R = diag([2, 2, 2, 2]);             % input cost
 preview = 1;                        % MPC preview flag
 formulation = 0;                    % MPC formulation flag
-noise = 0;                          % MPC noise flag
+noise = 1;                          % MPC noise flag
 debug = 0;                          % MPC debug flag
 
 % Simulation time and steps
@@ -107,67 +107,15 @@ mpc = MPC(model, x0, Tend, N, Q, R, x_ref, u_ref, preview, formulation, noise, d
 [x, u] = mpc.optimize();
 
 
-% Plot ─────────────────────────────────────────────────────────────────────────
-
-% Main trajectory plot
-figure(1);
-
-% Reference trajectory
-ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
-hold on;
-arrow_length = 0.01;
-for i = 1:length(x_ref)
-    x_arrow = arrow_length * cos(x_ref(i, 7));
-    y_arrow = arrow_length * sin(x_ref(i, 7));
-    quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
-end
-legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
-
-% Labels
-title('Trajectory Tracking with MPC (Non-Linear Helicopter System)');
-xlabel('x'); ylabel('y');
-grid on;
-axis equal;
-hold on;
-
-% % Set plot limits
-% xlim([-1.5, 1.5]);
-% ylim([-1, 1]);
-% hold on;
-
-% ────────────────────
-% Wait for figure here
-pause(1);
-
-% Real trajectory
-for i = 1:Nsteps
-    x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
-    x_line.Color(4) = 0.5; % line transparency 50%
-    hold on;
-    x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
-    hold on;
-    quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 7)), arrow_length * sin(x(1:i, 7)), 'AutoScale', 'off', 'Color', 'blue');
-    target = scatter(x_ref(i, 1), x_ref(i, 2), 20, 'red', 'filled');
-    hold on;
-    legend([ref_points, x_points, target],{'Reference trajectory', 'Real trajectory', 'Target'}, 'Location', 'northwest');
-    hold on;
-
-    pause(0.05);
-    if i < Nsteps
-        delete(x_line);
-        delete(target);
-    end
-end
-
-% % GIF ──────────────────────────────────────────────────────────────────────────
+% % Plot ─────────────────────────────────────────────────────────────────────────
+% 
 % % Main trajectory plot
 % figure(1);
-% filename = 'images/helicopter_MPC.gif'; % Output GIF filename
 % 
 % % Reference trajectory
 % ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
 % hold on;
-% arrow_length = 0.03;
+% arrow_length = 0.01;
 % for i = 1:length(x_ref)
 %     x_arrow = arrow_length * cos(x_ref(i, 7));
 %     y_arrow = arrow_length * sin(x_ref(i, 7));
@@ -182,13 +130,16 @@ end
 % axis equal;
 % hold on;
 % 
-% % Capture initial frame for GIF
-% frame = getframe(gcf);
-% img = frame2im(frame);
-% [imind, cm] = rgb2ind(img, 256); 
-% imwrite(imind, cm, filename, 'gif', 'Loopcount', inf, 'DelayTime', 0.05);
+% % % Set plot limits
+% % xlim([-1.5, 1.5]);
+% % ylim([-1, 1]);
+% % hold on;
 % 
-% % Real trajectory animation and GIF capture
+% % ────────────────────
+% % Wait for figure here
+% pause(1);
+% 
+% % Real trajectory
 % for i = 1:Nsteps
 %     x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
 %     x_line.Color(4) = 0.5; % line transparency 50%
@@ -196,16 +147,10 @@ end
 %     x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
 %     hold on;
 %     quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 7)), arrow_length * sin(x(1:i, 7)), 'AutoScale', 'off', 'Color', 'blue');
+%     target = scatter(x_ref(i, 1), x_ref(i, 2), 20, 'red', 'filled');
 %     hold on;
-%     target = scatter(x_ref(i, 1), x_ref(i, 2), 20, 'filled', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', 'red');
+%     legend([ref_points, x_points, target],{'Reference trajectory', 'Real trajectory', 'Target'}, 'Location', 'northwest');
 %     hold on;
-%     legend([ref_points, ref_points, x_points, target],{'Guide Points', 'Reference trajectory', 'Real trajectory', 'Target'}, 'Location', 'northwest');
-%     hold on;
-%     % Capture frame for GIF
-%     frame = getframe(gcf);
-%     img = frame2im(frame);
-%     [imind, cm] = rgb2ind(img, 256);
-%     imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append', 'DelayTime', 0.05);
 % 
 %     pause(0.05);
 %     if i < Nsteps
@@ -213,4 +158,70 @@ end
 %         delete(target);
 %     end
 % end
+
+% GIF ──────────────────────────────────────────────────────────────────────────
+% Main trajectory plot
+figure(1);
+filename = 'images/helicopter_MPC_lemniscate_noise2.gif'; % Output GIF filename
+
+% Reference trajectory
+ref_points = scatter(x_ref(:, 1), x_ref(:, 2), 5, 'filled', 'MarkerFaceColor', '#808080');
+hold on;
+arrow_length = 0.02;
+for i = 1:length(x_ref)
+    x_arrow = arrow_length * cos(x_ref(i, 7));
+    y_arrow = arrow_length * sin(x_ref(i, 7));
+    quiver(x_ref(i, 1), x_ref(i, 2), x_arrow, y_arrow, 'AutoScale', 'off', 'Color', '#808080');
+end
+legend(ref_points,{'Reference trajectory'}, 'Location', 'northwest');
+
+% Labels
+title('Trajectory Tracking with MPC (Non-Linear Helicopter System)');
+xlabel('x'); ylabel('y');
+grid on;
+axis equal;
+hold on;
+axis tight; % Adjust axis limits to fit the data tightly
+hold on;
+
+% Set plot limits
+xlim([-1.7, 1.7]);
+% xlim([-0.6, 0.6]);
+ylim([-0.8, 0.8]);
+hold on;
+
+% Adjust figure to fit tightly around the plot
+set(gca, 'LooseInset', get(gca, 'TightInset'));
+
+% Capture initial frame for GIF
+frame = getframe(gca);
+img = frame2im(frame);
+[imind, cm] = rgb2ind(img, 256); 
+imwrite(imind, cm, filename, 'gif', 'Loopcount', inf, 'DelayTime', 0.1);
+
+% Real trajectory animation and GIF capture
+for i = 1:Nsteps
+    x_line = plot(x(1:i, 1), x(1:i, 2), 'blue', 'LineWidth', 1);
+    x_line.Color(4) = 0.5; % line transparency 50%
+    hold on;
+    x_points = scatter(x(1:i, 1), x(1:i, 2), 5, 'blue', 'filled');
+    hold on;
+    quiver(x(1:i, 1), x(1:i, 2), arrow_length * cos(x(1:i, 7)), arrow_length * sin(x(1:i, 7)), 'AutoScale', 'off', 'Color', 'blue');
+    hold on;
+    target = scatter(x_ref(i, 1), x_ref(i, 2), 20, 'filled', 'MarkerFaceColor', 'none', 'MarkerEdgeColor', 'red');
+    hold on;
+    legend([ref_points, x_points, target],{'Reference trajectory', 'Real trajectory', 'Target'}, 'Location', 'northwest');
+    hold on;
+    % Capture frame for GIF
+    frame = getframe(gca);
+    img = frame2im(frame);
+    [imind, cm] = rgb2ind(img, 256);
+    imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append', 'DelayTime', 0.1);
+
+    pause(0.05);
+    if i < Nsteps
+        delete(x_line);
+        delete(target);
+    end
+end
 
