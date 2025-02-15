@@ -539,6 +539,11 @@ end
 				$\{t_k\}_{k=1}^{N_{guide}}$	$\rightarrow$ obtain $N_{guide}$ reference
 				points $\{(\mathbf{x}_{\text{ref}, k}, \mathbf{u}_{\text{ref}, k})\}_{k=1}^{N_{guide}}$
 				</p>
+				<p>
+				Total time to complete the
+				trajectory set to:
+				$\quad T_{end} = N_{guide} \cdot T_s$
+				</p>
 				<div class="cbox" style="font-size: 1em;"
 								  data-id="inputs-warning">
 				<span style="color: black;">⚠</span>
@@ -548,11 +553,6 @@ end
 				\sum_{i=1}^{N_{samples}} \mathbf{u}_{\text{ref}}\left(t_k +
 				\frac{i \cdot T_s}{N_{samples}} \right) \]
 				</div>
-				<p>
-				Total time to complete the
-				trajectory set to:
-				$\quad T_{end} = N_{guide} \cdot T_s$
-				</p>
 
 			</div>
 
@@ -609,6 +609,11 @@ end
 				$\{t_k\}_{k=1}^{N_{guide}}$	$\rightarrow$ obtain $N_{guide}$ reference
 				points $\{(\mathbf{x}_{\text{ref}, k}, \mathbf{u}_{\text{ref}, k})\}_{k=1}^{N_{guide}}$
 				</p>
+				<p>
+				Total time to complete the
+				trajectory set to:
+				$\quad T_{end} = N_{guide} \cdot T_s$
+				</p>
 				<div class="cbox" style="font-size: 1em;"
 								  data-id="inputs-warning">
 				<span style="color: black;">⚠</span>
@@ -618,12 +623,70 @@ end
 				\sum_{i=1}^{N_{samples}} \mathbf{u}_{\text{ref}}\left(t_k +
 				\frac{i \cdot T_s}{N_{samples}} \right) \]
 				</div>
-				<p>
-				Total time to complete the
-				trajectory set to:
-				$\quad T_{end} = N_{guide} \cdot T_s$
-				</p>
 
+			</div>
+
+		</section>
+		<section data-auto-animate>
+			<h1 class="slide-title">Analytical Trajectory Generation</h1>
+
+			<br>
+
+			<div class="slide-body">
+
+				<div class="cbox" style="font-size: 0.6em;"
+								  data-id="inputs-warning">
+				<span style="color: black;">⚠</span>
+				Discrete reference inputs $\mathbf{u}_{\text{ref}, k}$ $\rightarrow$ from averages of
+				continuous-time inputs $\mathbf{u}_{\text{ref}}(t)$:<br>
+				\[ \mathbf{u}_{\text{ref}, k} = \frac{1}{N_{samples}}
+				\sum_{i=1}^{N_{samples}} \mathbf{u}_{\text{ref}}\left(t_k +
+				\frac{i \cdot T_s}{N_{samples}} \right) \]
+				</div>
+
+				<div style="display: flex; justify-content: center;">
+					<img src="./images/unicycle_samples.gif" style="width: 75%;
+							  border: 1px solid var(--primary);">
+				</div>
+
+			</div>
+
+		</section>
+		<section data-auto-animate>
+			<h1 class="slide-title">Analytical Trajectory Generation</h1>
+
+			<br>
+
+			<div class="slide-body">
+				<p>
+				Simulations from first reference (<i>Helicopter</i>)
+				</p>
+				<div class="section-title-container" style="height: 85%;"
+													 data-id="simulation">
+					<img src="./images/helicopter_simulation.gif"
+					style="height: 400px; width: 700px; border: 1px solid black;">
+					<img src="./images/helicopter_simulation_zoom.gif"
+					style="height: 400px; width: 400px; border: 1px solid black;">
+				</div>
+			</div>
+
+		</section>
+		<section data-auto-animate>
+			<h1 class="slide-title">Analytical Trajectory Generation</h1>
+
+			<br>
+
+			<div class="slide-body">
+				<p>
+				Simulations from first reference (<i>Helicopter</i>)
+				</p>
+				<div class="section-title-container" style="height: 85%;"
+													 data-id="simulation">
+					<img src="./images/helicopter_simulation_ref.gif"
+					style="height: 400px; width: 700px; border: 1px solid black;">
+					<img src="./images/helicopter_simulation_ref_zoom.gif"
+					style="height: 400px; width: 400px; border: 1px solid black;">
+				</div>
 			</div>
 
 		</section>
@@ -939,14 +1002,16 @@ end
 				 \left( \mathbf{U}_k - \mathbf{U}_{\text{ref},k} \right)\\
 				 &= \mathbf{U}_k^T \left(
 						\mathcal{B}^T \mathcal{Q} \mathcal{B} + \mathcal{R}
-					\right) \mathbf{U}_k 
-					+ 2 \big(
+					\right) \mathbf{U}_k + \dots\\
+				& \quad\dots	+ 2 \big(
 						\mathbf{x}_k^T \mathcal{A}^T \mathcal{Q} \mathcal{B} +
 						\ldots\\
 						& \quad \ldots
 						+ \mathcal{D}^T \mathcal{Q} \mathcal{B}
-						- \bar{\mathbf{X}}_k^T \mathcal{Q} \mathcal{B}
-						- \bar{\mathbf{U}}_k^T \mathcal{R}
+						- \mathbf{X}_{\text{ref},k}^T
+						\mathcal{Q} \mathcal{B} - \dots\\
+					&\quad \dots	- \mathbf{U}_{\text{ref},k}^T
+						\mathcal{R}
 					\big) \mathbf{U}_k\\
 				 &= \mathbf{U}_k^T \mathbf{H}_k \mathbf{U}_k + 2 \mathbf{f}_k^T \mathbf{U}_k
 	\end{aligned}
@@ -979,7 +1044,7 @@ end
 				\left( \mathbf{Z}_k - \mathbf{Z}_{\text{ref},k} \right)\\
 				&= \mathbf{Z}_k^T \mathbf{V} \mathbf{Z}_k + 2 \left( -
 				\mathbf{Z}_{\text{ref},k}^T \mathbf{V} \right) \mathbf{Z}_k\\
-				&= \mathbf{Z}_k^T \mathbf{H}_k \mathbf{Z}_k + 2 \tilde{\mathbf{f}}_k^T \mathbf{Z}_k
+				&= \mathbf{Z}_k^T \mathbf{V}_k \mathbf{Z}_k + 2 \tilde{\mathbf{f}}_k^T \mathbf{Z}_k
 	\end{aligned}
 						\]
 						</p>
@@ -1700,8 +1765,46 @@ function [x, u] = optimize(obj)
 			</div>
 		</section>
 
+
+		<!-- Slide 20: £D Trajectories --------------------------------------->
+		<section data-transition="slide">
+			<h1 class="slide-title">$3$D Trajectories with Helicopter</h1>
+
+			<div class="slide-body">
+				<div class="multi-column" style="margin-bottom: -40px;">
+					<div class="column" style="width: 50%;">
+						<p>
+						\[
+						z_I(t) = 0.05 \cdot t
+						\]
+						</p>
+					</div>
+					<div class="column" style="width: 50%;">
+						<p>
+						\[
+						z_I(t) = 0.2 \cdot \sin(4 \cdot t)
+						\]
+						</p>
+					</div>
+				</div>
+				<div class="section-title-container" style="height: 85%;
+							margin-bottom: -20px;">
+					<img src="./images/helicopter_MPC_3Dspiral.gif"
+					style="height: 400px; width:500px; border: 1px solid black;">
+					<img src="./images/helicopter_MPC_3Dsinusoid.gif"
+					style="height: 400px; width: 500px; border: 1px solid black;">
+				</div>
+				<p>
+				\[\textcolor{gray}{\bullet}: \text{Reference} \quad
+				\textcolor{red}{\bullet}: \text{Target} \quad
+				\textcolor{blue}{\bullet}: \text{Real Trajectory}\]
+				</p>
+			</div>
+
+
 		</section>
 
+		</section>
 
 		<!-- Section: References -----------------.--------------------------->
 		<section data-name="References" data-sm="false">
